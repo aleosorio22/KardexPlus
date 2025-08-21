@@ -1,0 +1,5 @@
+- [x] Proyecto inicializado con Node.js y dependencias instaladas.
+- [x] Estructura básica creada: index.js, .env y README.md.
+- [ ] Personalizar endpoints y lógica de usuarios, autenticación y encriptación.
+- [ ] Documentar endpoints y flujo de autenticación.
+- [ ] Crear tareas de ejecución y pruebas.
