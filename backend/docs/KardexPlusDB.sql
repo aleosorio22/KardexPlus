@@ -716,3 +716,10 @@ RECOMENDACIONES DE USO:
 - Monitorear performance de los triggers en producción
 - Configurar backup automático diario de la base de datos
 */
+
+//inserts basicos o iniciales
+INSERT INTO `Roles` (`Rol_Nombre`, `Rol_Descripcion`) VALUES
+('Administrador', 'Acceso completo al sistema'),
+('Gerente', 'Gestión de inventario y reportes'),
+('Operador', 'Operaciones básicas de inventario'),
+('Consulta', 'Solo lectura de información');

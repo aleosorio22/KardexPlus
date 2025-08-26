@@ -11,9 +11,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Importar la configuración de la base de datos
-const db = require('./config/database');
+const db = require('./core/config/database');
 
 //importar rutas
+const userRoutes = require('./modules/users/user.routes');
 
 
 // Inicializar app
@@ -42,6 +43,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({ message: 'API de Sistema de Reservaciones para Café El Ángel' });
 });
+
+// Rutas de usuarios
+app.use('/api/users', userRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;
