@@ -41,7 +41,7 @@ app.use(express.json());
 
 // Rutas
 app.get('/', (req, res) => {
-  res.json({ message: 'API de Sistema de Reservaciones para Café El Ángel' });
+  res.json({ message: 'API de Sistema de Inventarios para Café El Ángel' });
 });
 
 // Rutas de usuarios
