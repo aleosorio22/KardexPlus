@@ -12,7 +12,7 @@ class UserModel {
         
         // Verificar si el correo ya existe
         const [existingUser] = await db.execute(
-            'SELECT Usuario_Id FROM usuarios WHERE Usuario_Correo = ?',
+            'SELECT Usuario_Id FROM Usuarios WHERE Usuario_Correo = ?',
             [Usuario_Correo]
         );
         
@@ -24,7 +24,7 @@ class UserModel {
         const hashedPassword = await bcrypt.hash(Usuario_Contrasena, 12);
 
         const [result] = await db.execute(
-            'INSERT INTO usuarios (Usuario_Nombre, Usuario_Apellido, Usuario_Correo, Usuario_Contrasena, Rol_Id) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO Usuarios (Usuario_Nombre, Usuario_Apellido, Usuario_Correo, Usuario_Contrasena, Rol_Id) VALUES (?, ?, ?, ?, ?)',
             [Usuario_Nombre, Usuario_Apellido, Usuario_Correo, hashedPassword, Rol_Id]
         );
         
@@ -39,7 +39,7 @@ class UserModel {
     static async findByEmail(email) {
         const [users] = await db.execute(`
             SELECT u.*, r.Rol_Nombre, r.Rol_Descripcion
-            FROM usuarios u 
+            FROM Usuarios u 
             LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Correo = ? AND u.Usuario_Estado = 1
         `, [email]);
@@ -54,7 +54,7 @@ class UserModel {
     static async findById(id) {
         const [users] = await db.execute(`
             SELECT u.*, r.Rol_Nombre, r.Rol_Descripcion
-            FROM usuarios u 
+            FROM Usuarios u 
             LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Id = ? AND u.Usuario_Estado = 1
         `, [id]);
@@ -78,7 +78,7 @@ class UserModel {
     static async adminExists() {
         const [admins] = await db.execute(`
             SELECT u.Usuario_Id 
-            FROM usuarios u 
+            FROM Usuarios u 
             JOIN roles r ON u.Rol_Id = r.Rol_Id 
             WHERE r.Rol_Nombre = 'Administrador' AND u.Usuario_Estado = 1
         `);

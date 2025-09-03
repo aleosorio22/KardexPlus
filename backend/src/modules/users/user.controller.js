@@ -169,7 +169,7 @@ exports.getAllUsers = async (req, res) => {
         const [users] = await db.execute(`
             SELECT u.Usuario_Id, u.Usuario_Nombre, u.Usuario_Apellido, u.Usuario_Correo, 
                    u.Usuario_Estado, r.Rol_Nombre, r.Rol_Descripcion
-            FROM usuarios u 
+            FROM Usuarios u 
             LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Estado = 1
         `);
@@ -224,7 +224,7 @@ exports.updateUser = async (req, res) => {
         const { Usuario_Nombre, Usuario_Apellido, Usuario_Correo, Rol_Id } = req.body;
         
         const [result] = await db.execute(
-            'UPDATE usuarios SET Usuario_Nombre = ?, Usuario_Apellido = ?, Usuario_Correo = ?, Rol_Id = ? WHERE Usuario_Id = ? AND Usuario_Estado = 1',
+            'UPDATE Usuarios SET Usuario_Nombre = ?, Usuario_Apellido = ?, Usuario_Correo = ?, Rol_Id = ? WHERE Usuario_Id = ? AND Usuario_Estado = 1',
             [Usuario_Nombre, Usuario_Apellido, Usuario_Correo, Rol_Id, req.params.id]
         );
         
@@ -261,7 +261,7 @@ exports.updatePassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, 12);
         
         const [result] = await db.execute(
-            'UPDATE usuarios SET Usuario_Contrasena = ? WHERE Usuario_Id = ? AND Usuario_Estado = 1',
+            'UPDATE Usuarios SET Usuario_Contrasena = ? WHERE Usuario_Id = ? AND Usuario_Estado = 1',
             [hashedPassword, req.params.id]
         );
         
@@ -293,7 +293,7 @@ exports.updatePassword = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         const [result] = await db.execute(
-            'UPDATE usuarios SET Usuario_Estado = 0 WHERE Usuario_Id = ?',
+            'UPDATE Usuarios SET Usuario_Estado = 0 WHERE Usuario_Id = ?',
             [req.params.id]
         );
         
@@ -354,7 +354,7 @@ exports.getAvailableUsers = async (req, res) => {
         const [rows] = await db.execute(`
             SELECT u.Usuario_Id, u.Usuario_Nombre, u.Usuario_Apellido, u.Usuario_Correo, 
                    u.Usuario_Estado, r.Rol_Nombre
-            FROM usuarios u 
+            FROM Usuarios u 
             LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id
             WHERE u.Usuario_Estado = 1 
             AND r.Rol_Nombre != 'Administrador'
