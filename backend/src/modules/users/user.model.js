@@ -40,7 +40,7 @@ class UserModel {
         const [users] = await db.execute(`
             SELECT u.*, r.Rol_Nombre, r.Rol_Descripcion
             FROM Usuarios u 
-            LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
+            LEFT JOIN Roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Correo = ? AND u.Usuario_Estado = 1
         `, [email]);
         return users[0];
@@ -55,7 +55,7 @@ class UserModel {
         const [users] = await db.execute(`
             SELECT u.*, r.Rol_Nombre, r.Rol_Descripcion
             FROM Usuarios u 
-            LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
+            LEFT JOIN Roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Id = ? AND u.Usuario_Estado = 1
         `, [id]);
         return users[0];
@@ -79,7 +79,7 @@ class UserModel {
         const [admins] = await db.execute(`
             SELECT u.Usuario_Id 
             FROM Usuarios u 
-            JOIN roles r ON u.Rol_Id = r.Rol_Id 
+            JOIN Roles r ON u.Rol_Id = r.Rol_Id 
             WHERE r.Rol_Nombre = 'Administrador' AND u.Usuario_Estado = 1
         `);
         return admins.length > 0;
@@ -92,7 +92,7 @@ class UserModel {
      */
     static async getRoleIdByName(roleName) {
         const [roles] = await db.execute(
-            'SELECT Rol_Id FROM roles WHERE Rol_Nombre = ?',
+            'SELECT Rol_Id FROM Roles WHERE Rol_Nombre = ?',
             [roleName]
         );
         return roles[0]?.Rol_Id;

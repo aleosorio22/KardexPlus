@@ -170,7 +170,7 @@ exports.getAllUsers = async (req, res) => {
             SELECT u.Usuario_Id, u.Usuario_Nombre, u.Usuario_Apellido, u.Usuario_Correo, 
                    u.Usuario_Estado, r.Rol_Nombre, r.Rol_Descripcion
             FROM Usuarios u 
-            LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id 
+            LEFT JOIN Roles r ON u.Rol_Id = r.Rol_Id 
             WHERE u.Usuario_Estado = 1
         `);
         
@@ -355,7 +355,7 @@ exports.getAvailableUsers = async (req, res) => {
             SELECT u.Usuario_Id, u.Usuario_Nombre, u.Usuario_Apellido, u.Usuario_Correo, 
                    u.Usuario_Estado, r.Rol_Nombre
             FROM Usuarios u 
-            LEFT JOIN roles r ON u.Rol_Id = r.Rol_Id
+            LEFT JOIN Roles r ON u.Rol_Id = r.Rol_Id
             WHERE u.Usuario_Estado = 1 
             AND r.Rol_Nombre != 'Administrador'
         `);
