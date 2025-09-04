@@ -1,19 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// Layouts
+import AdminLayout from "../layouts/AdminLayout";
+
 // Pages
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
+import Users from "../pages/admin/Users";
+import NotFound from "../pages/NotFound";
+
+// UI Components
+import { LoadingSpinner } from "../components/ui";
 
 function AppRouter() {
   const { auth, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner className="h-screen" />;
   }
 
   return (
@@ -26,8 +30,12 @@ function AppRouter() {
           </>
         ) : (
           <>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="/" element={<AdminLayout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="configuracion/usuarios" element={<Users />} />
+            </Route>
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
           </>
         )}
       </Routes>
