@@ -23,6 +23,8 @@ function MainContent() {
 }
 
 export default function AdminLayout() {
+  console.log('AdminLayout - Rendering');
+  
   return (
     <SidebarProvider>
       <Sidebar />

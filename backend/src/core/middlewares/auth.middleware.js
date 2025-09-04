@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../../modules/users/user.model');
+const db = require('../config/database');
 
 const authMiddleware = async (req, res, next) => {
     try {
@@ -84,8 +85,130 @@ const hasRole = (allowedRoles) => {
     };
 };
 
+// Middleware para verificar permisos específicos
+const hasPermission = (permissionCode) => {
+    return async (req, res, next) => {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Usuario no autenticado'
+                });
+            }
+
+            // Usar la función de la base de datos para verificar el permiso
+            const [rows] = await db.execute(
+                'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+                [req.user.id, permissionCode]
+            );
+
+            if (rows[0].tiene_permiso) {
+                next();
+            } else {
+                res.status(403).json({
+                    success: false,
+                    message: `Acceso denegado. Se requiere el permiso: ${permissionCode}`
+                });
+            }
+        } catch (error) {
+            console.error('Error verificando permisos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno al verificar permisos',
+                error: error.message
+            });
+        }
+    };
+};
+
+// Middleware para verificar múltiples permisos (requiere todos)
+const hasAllPermissions = (permissionCodes) => {
+    return async (req, res, next) => {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Usuario no autenticado'
+                });
+            }
+
+            // Verificar todos los permisos
+            const permissionChecks = await Promise.all(
+                permissionCodes.map(async (permissionCode) => {
+                    const [rows] = await db.execute(
+                        'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+                        [req.user.id, permissionCode]
+                    );
+                    return { code: permissionCode, hasPermission: rows[0].tiene_permiso };
+                })
+            );
+
+            const missingPermissions = permissionChecks
+                .filter(check => !check.hasPermission)
+                .map(check => check.code);
+
+            if (missingPermissions.length === 0) {
+                next();
+            } else {
+                res.status(403).json({
+                    success: false,
+                    message: `Acceso denegado. Se requieren los permisos: ${missingPermissions.join(', ')}`
+                });
+            }
+        } catch (error) {
+            console.error('Error verificando permisos múltiples:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno al verificar permisos',
+                error: error.message
+            });
+        }
+    };
+};
+
+// Middleware para verificar múltiples permisos (requiere al menos uno)
+const hasAnyPermission = (permissionCodes) => {
+    return async (req, res, next) => {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Usuario no autenticado'
+                });
+            }
+
+            // Verificar si tiene al menos uno de los permisos
+            for (const permissionCode of permissionCodes) {
+                const [rows] = await db.execute(
+                    'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+                    [req.user.id, permissionCode]
+                );
+                
+                if (rows[0].tiene_permiso) {
+                    return next();
+                }
+            }
+
+            res.status(403).json({
+                success: false,
+                message: `Acceso denegado. Se requiere al menos uno de los permisos: ${permissionCodes.join(', ')}`
+            });
+        } catch (error) {
+            console.error('Error verificando permisos alternativos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno al verificar permisos',
+                error: error.message
+            });
+        }
+    };
+};
+
 module.exports = {
     authMiddleware,
     isAdmin,
-    hasRole
+    hasRole,
+    hasPermission,
+    hasAllPermissions,
+    hasAnyPermission
 };
