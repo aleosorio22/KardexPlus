@@ -15,6 +15,8 @@ const db = require('./core/config/database');
 
 //importar rutas
 const userRoutes = require('./modules/users/user.routes');
+const permissionsRoutes = require('./modules/permissions/permissions.routes');
+const roleRoutes = require('./modules/roles/role.routes');
 
 
 // Inicializar app
@@ -22,11 +24,28 @@ const app = express();
 
 //cors para permitir solicitudes desde el frontend
 const corsOptions = {
-  origin: [
-    'https://kardexplus.netlify.app',
-    'https://kardexplus.cafeelangel.com',
-    'http://localhost:5173'
-  ], 
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como aplicaciones móviles o Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://kardexplus.netlify.app',
+      'https://kardexplus.cafeelangel.com',
+      'http://localhost:5173',
+      'http://localhost:5174'
+    ];
+    
+    // En desarrollo, permitir cualquier localhost
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('No permitido por CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -46,6 +65,12 @@ app.get('/', (req, res) => {
 
 // Rutas de usuarios
 app.use('/api/users', userRoutes);
+
+// Rutas de permisos
+app.use('/api/permissions', permissionsRoutes);
+
+// Rutas de roles
+app.use('/api/roles', roleRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;

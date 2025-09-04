@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import {
   FiHome,
   FiUsers,
@@ -66,44 +67,115 @@ export function SidebarProvider({ children }) {
 }
 
 export default function Sidebar() {
+  console.log('Sidebar - Component rendering');
+  
   const { logout } = useAuth();
   const location = useLocation();
+  const { hasPermission, hasModulePermissions, loading: permissionsLoading } = usePermissions();
   const { isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen, openSubmenus, toggleSubmenu } = useSidebar();
 
-  // Menú items con submenús
+  console.log('Sidebar - Permissions loading:', permissionsLoading);
+  console.log('Sidebar - Location:', location.pathname);
+
+  // Menú items con submenús y permisos requeridos
   const menuItems = [
     { 
       name: "Inicio", 
       icon: FiHome, 
-      path: "/dashboard" 
+      path: "/dashboard",
+      permission: "dashboard.ver"
     },
     { 
       name: "Bodegas", 
       icon: FiBox, 
-      path: "/bodegas" 
+      path: "/bodegas",
+      permission: "bodegas.ver"
     },
     { 
       name: "Compras", 
       icon: FiShoppingCart, 
-      path: "/compras" 
+      path: "/compras",
+      permission: "compras.ver"
     },
     { 
       name: "Reportes", 
       icon: FiPieChart, 
-      path: "/reportes" 
+      path: "/reportes",
+      permission: "reportes.inventario"
     },
     { 
       name: "Configuración", 
       icon: FiSettings, 
       hasSubmenu: true,
+      modulePermission: "configuracion", // Verificar si tiene algún permiso del módulo
       submenu: [
-        { name: "Usuarios", icon: FiUsers, path: "/configuracion/usuarios" },
-        { name: "Ítems", icon: FiPackage, path: "/configuracion/items" },
-        { name: "Almacenes y Producción", icon: FiSettings, path: "/configuracion/almacenes" },
-        { name: "Turnos", icon: FiClock, path: "/configuracion/turnos" },
+        { 
+          name: "Usuarios", 
+          icon: FiUsers, 
+          path: "/configuracion/usuarios",
+          permission: "usuarios.ver"
+        },
+        { 
+          name: "Ítems", 
+          icon: FiPackage, 
+          path: "/configuracion/items",
+          permission: "items.ver"
+        },
+        { 
+          name: "Almacenes y Producción", 
+          icon: FiSettings, 
+          path: "/configuracion/almacenes",
+          permission: "bodegas.ver"
+        },
+        { 
+          name: "Turnos", 
+          icon: FiClock, 
+          path: "/configuracion/turnos",
+          permission: "configuracion.ver"
+        },
       ]
     },
   ];
+
+  // Filtrar elementos del menú basado en permisos
+  const getFilteredMenuItem = (item) => {
+    // TEMPORALMENTE: mostrar todos los elementos sin filtrar
+    console.log('Sidebar - Processing menu item:', item.name);
+    return item;
+    
+    // Código original comentado por ahora
+    /*
+    // Si está cargando permisos, mostrar todos los elementos temporalmente
+    if (permissionsLoading) return item;
+
+    if (item.hasSubmenu) {
+      // Para submenús, filtrar los elementos internos
+      const filteredSubmenu = item.submenu.filter(subItem => 
+        !subItem.permission || hasPermission(subItem.permission)
+      );
+      
+      // Si no hay submenús visibles, no mostrar el elemento principal
+      if (filteredSubmenu.length === 0) return null;
+      
+      return {
+        ...item,
+        submenu: filteredSubmenu
+      };
+    } else {
+      // Para elementos normales, verificar permiso directo
+      if (item.permission && !hasPermission(item.permission)) {
+        return null;
+      }
+      return item;
+    }
+    */
+  };
+
+  const filteredMenuItems = menuItems
+    .map(getFilteredMenuItem)
+    .filter(Boolean); // Remover elementos null
+    
+  console.log('Sidebar - Filtered menu items:', filteredMenuItems);
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -183,7 +255,7 @@ export default function Sidebar() {
         {/* Navegación principal */}
         <div className="flex-1 overflow-y-auto py-6 scrollbar-hide">
           <ul className="space-y-1.5 px-2">
-            {menuItems.map((item) => (
+            {filteredMenuItems.map((item) => (
               <li key={item.name}>
                 {item.hasSubmenu ? (
                   <>
@@ -305,7 +377,7 @@ export default function Sidebar() {
             {/* Navegación */}
             <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
               <ul className="space-y-1 px-3">
-                {menuItems.map((item) => (
+                {filteredMenuItems.map((item) => (
                   <li key={item.name}>
                     {item.hasSubmenu ? (
                       <>

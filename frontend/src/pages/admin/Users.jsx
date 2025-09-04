@@ -1,6 +1,9 @@
-import { FiUsers, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiUsers, FiPlus, FiEdit, FiTrash2, FiShield } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 
 const Users = () => {
+  console.log('Users component - Rendering');
+  
   return (
     <div className="space-y-6">
       {/* Header de la página */}
@@ -16,10 +19,20 @@ const Users = () => {
             </div>
           </div>
           
-          <button className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
-            <FiPlus size={16} />
-            <span>Nuevo Usuario</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            <Link 
+              to="/configuracion/roles"
+              className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <FiShield size={16} />
+              <span>Gestionar Roles</span>
+            </Link>
+            
+            <button className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+              <FiPlus size={16} />
+              <span>Nuevo Usuario</span>
+            </button>
+          </div>
         </div>
       </div>
 
