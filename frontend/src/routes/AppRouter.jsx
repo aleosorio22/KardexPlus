@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 // Pages
 import Login from "../pages/Login";
+import Dashboard from "../pages/Dashboard";
 
 function AppRouter() {
   const { auth, loading } = useAuth();
@@ -24,9 +25,8 @@ function AppRouter() {
             <Route path="*" element={<Navigate to="/login" />} />
           </>
         ) : (
-          // Por ahora solo redirigimos al login, más adelante agregaremos las rutas por rol
           <>
-            <Route path="/dashboard" element={<div className="p-8 text-center">Dashboard - Coming Soon</div>} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </>
         )}
