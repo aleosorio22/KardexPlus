@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Package } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -7,6 +9,8 @@ const Login = () => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -15,10 +19,22 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí irá la lógica de login más adelante
-    console.log('Login attempt:', formData);
+    setIsLoading(true);
+    
+    try {
+      await login({
+        Usuario_Correo: formData.email,
+        Usuario_Contrasena: formData.password
+      });
+      toast.success('¡Bienvenido! Login exitoso');
+    } catch (error) {
+      console.error('Error en login:', error);
+      toast.error(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -91,9 +107,17 @@ const Login = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  disabled={isLoading}
+                  className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 flex items-center justify-center gap-2"
                 >
-                  Log in
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary-foreground"></div>
+                      Iniciando...
+                    </>
+                  ) : (
+                    'Iniciar Sesión'
+                  )}
                 </button>
               </form>
             </div>
@@ -208,9 +232,17 @@ const Login = () => {
 
               <button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-6"
+                disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-medium py-3 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 mt-6 flex items-center justify-center gap-2"
               >
-                Iniciar Sesión
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary-foreground"></div>
+                    Iniciando...
+                  </>
+                ) : (
+                  'Iniciar Sesión'
+                )}
               </button>
             </form>
           </div>
