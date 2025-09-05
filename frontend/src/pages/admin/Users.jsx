@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiUsers, FiPlus, FiEdit, FiTrash2, FiShield, FiMail, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiUsers, FiPlus, FiEdit, FiShield, FiMail, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { DataTable, SearchAndFilter } from '../../components/DataTable';
 import { UserFormModal } from '../../components/Modals';
@@ -259,20 +259,6 @@ const Users = () => {
     }
   };
 
-  // Manejar eliminación de usuario
-  const handleDeleteUser = async (user) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar a ${user.Usuario_Nombre} ${user.Usuario_Apellido}?`)) {
-      try {
-        await userService.deleteUser(user.Usuario_Id);
-        toast.success('Usuario eliminado exitosamente');
-        loadUsers(); // Recargar la lista
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Error al eliminar el usuario');
-      }
-    }
-  };
-
   // Renderizar acciones de fila
   const renderRowActions = (user) => (
     <>
@@ -285,7 +271,11 @@ const Users = () => {
         }`}
         title={user.Usuario_Estado === 1 ? 'Desactivar usuario' : 'Activar usuario'}
       >
-        {user.Usuario_Estado === 1 ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+        {user.Usuario_Estado === 1 ? (
+          <FiToggleRight className="w-4 h-4" />
+        ) : (
+          <FiToggleLeft className="w-4 h-4" />
+        )}
       </button>
       
       <button
@@ -294,14 +284,6 @@ const Users = () => {
         title="Editar usuario"
       >
         <FiEdit className="w-4 h-4" />
-      </button>
-      
-      <button
-        onClick={() => handleDeleteUser(user)}
-        className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-        title="Eliminar usuario"
-      >
-        <FiTrash2 className="w-4 h-4" />
       </button>
     </>
   );
@@ -363,6 +345,28 @@ const Users = () => {
         totalItems={filteredUsers.length}
         searchPlaceholder="Buscar por nombre, apellido, email..."
       />
+
+      {/* Nota explicativa */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <FiUsers className="w-5 h-5 text-blue-600 mt-0.5" />
+          </div>
+          <div className="text-sm">
+            <p className="text-blue-800 font-medium">Acciones disponibles:</p>
+            <ul className="text-blue-700 mt-1 space-y-1">
+              <li className="flex items-center space-x-2">
+                <FiToggleRight className="w-4 h-4" />
+                <span><strong>Toggle:</strong> Activar/Desactivar usuario</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <FiEdit className="w-4 h-4" />
+                <span><strong>Editar:</strong> Modificar información del usuario</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       {/* Tabla de usuarios */}
       <DataTable
