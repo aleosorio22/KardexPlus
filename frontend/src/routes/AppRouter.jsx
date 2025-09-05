@@ -10,10 +10,14 @@ import Dashboard from "../pages/Dashboard";
 import Users from "../pages/admin/Users";
 import Roles from "../pages/admin/Roles";
 import RolePermissions from "../pages/admin/RolePermissions";
+import SystemSetup from "../pages/admin/SystemSetup";
 import NotFound from "../pages/NotFound";
+import AccessDenied from "../pages/AccessDenied";
+import ServerError from "../pages/ServerError";
 
 // Components
 import ProtectedRoute from "../components/ProtectedRoute";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { LoadingSpinner } from "../components/ui";
 
 function AppRouter() {
@@ -27,45 +31,62 @@ function AppRouter() {
   console.log('AppRouter - Loading state:', loading);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {!auth ? (
-          <>
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </>
-        ) : (
-          <>
-            {/* Ruta simple para testing */}
-            <Route path="/test" element={<div>Test Page - Usuario autenticado</div>} />
-            
-            <Route path="/" element={<AdminLayout />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {!auth ? (
+            <>
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </>
+          ) : (
+            <>
+              {/* Ruta simple para testing */}
+              <Route path="/test" element={<div>Test Page - Usuario autenticado</div>} />
               
-              {/* Dashboard sin protección temporalmente */}
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="/" element={<AdminLayout />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                
+                {/* Dashboard sin protección temporalmente */}
+                <Route path="dashboard" element={<Dashboard />} />
+                
+                <Route 
+                  path="configuracion/usuarios" 
+                  element={<Users />}
+                />
+                
+                <Route 
+                  path="configuracion/roles" 
+                  element={<Roles />}
+                />
+                
+                <Route 
+                  path="configuracion/roles/:id/permisos" 
+                  element={<RolePermissions />}
+                />
+                
+                <Route 
+                  path="configuracion/sistema" 
+                  element={<SystemSetup />}
+                />
+                
+                {/* Ruta catch-all dentro del layout para páginas no encontradas */}
+                <Route path="*" element={<NotFound />} />
+              </Route>
               
-              <Route 
-                path="configuracion/usuarios" 
-                element={<Users />}
-              />
+              {/* Ruta independiente para 404 (fuera del layout) */}
+              <Route path="/404" element={<NotFound />} />
               
-              <Route 
-                path="configuracion/roles" 
-                element={<Roles />}
-              />
+              {/* Ruta independiente para 403 (fuera del layout) */}
+              <Route path="/403" element={<AccessDenied />} />
               
-              <Route 
-                path="configuracion/roles/:id/permisos" 
-                element={<RolePermissions />}
-              />
-            </Route>
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<div>Página no encontrada - Usuario autenticado</div>} />
-          </>
-        )}
-      </Routes>
-    </BrowserRouter>
+              {/* Ruta independiente para 500 (fuera del layout) */}
+              <Route path="/500" element={<ServerError />} />
+            </>
+          )}
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
