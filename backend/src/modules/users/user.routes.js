@@ -1,6 +1,6 @@
 const express = require('express');
 const userController = require('./user.controller');
-const { authMiddleware, isAdmin, hasRole } = require('../../core/middlewares/auth.middleware');
+const { authMiddleware, isAdmin, hasRole, hasPermission } = require('../../core/middlewares/auth.middleware');
 
 const router = express.Router();
 
@@ -21,23 +21,23 @@ router.post('/login', userController.login);
 /**
  * @route POST /api/users/register
  * @desc Registrar nuevo usuario
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.crear)
  */
-router.post('/register', authMiddleware, isAdmin, userController.register);
+router.post('/register', authMiddleware, hasPermission('usuarios.crear'), userController.register);
 
 /**
  * @route GET /api/users
  * @desc Obtener todos los usuarios
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.ver)
  */
-router.get('/', authMiddleware, isAdmin, userController.getAllUsers);
+router.get('/', authMiddleware, hasPermission('usuarios.ver'), userController.getAllUsers);
 
 /**
  * @route GET /api/users/available
  * @desc Obtener usuarios disponibles
- * @access Private (Admin, Gerente)
+ * @access Private (Requiere permiso usuarios.ver)
  */
-router.get('/available', authMiddleware, hasRole(['Administrador', 'Gerente']), userController.getAvailableUsers);
+router.get('/available', authMiddleware, hasPermission('usuarios.ver'), userController.getAvailableUsers);
 
 /**
  * @route GET /api/users/profile
@@ -49,29 +49,36 @@ router.get('/profile', authMiddleware, userController.getProfile);
 /**
  * @route GET /api/users/:id
  * @desc Obtener usuario por ID
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.ver)
  */
-router.get('/:id', authMiddleware, isAdmin, userController.getUserById);
+router.get('/:id', authMiddleware, hasPermission('usuarios.ver'), userController.getUserById);
 
 /**
  * @route PUT /api/users/:id
  * @desc Actualizar usuario
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.editar)
  */
-router.put('/:id', authMiddleware, isAdmin, userController.updateUser);
+router.put('/:id', authMiddleware, hasPermission('usuarios.editar'), userController.updateUser);
+
+/**
+ * @route PATCH /api/users/:id/toggle-status
+ * @desc Cambiar estado del usuario (activar/desactivar)
+ * @access Private (Requiere permiso usuarios.editar)
+ */
+router.patch('/:id/toggle-status', authMiddleware, hasPermission('usuarios.editar'), userController.toggleUserStatus);
 
 /**
  * @route PUT /api/users/:id/password
  * @desc Actualizar contraseña de usuario
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.editar)
  */
-router.put('/:id/password', authMiddleware, isAdmin, userController.updatePassword);
+router.put('/:id/password', authMiddleware, hasPermission('usuarios.editar'), userController.updatePassword);
 
 /**
  * @route DELETE /api/users/:id
  * @desc Eliminar (desactivar) usuario
- * @access Private (Admin)
+ * @access Private (Requiere permiso usuarios.eliminar)
  */
-router.delete('/:id', authMiddleware, isAdmin, userController.deleteUser);
+router.delete('/:id', authMiddleware, hasPermission('usuarios.eliminar'), userController.deleteUser);
 
 module.exports = router;

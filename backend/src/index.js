@@ -17,6 +17,7 @@ const db = require('./core/config/database');
 const userRoutes = require('./modules/users/user.routes');
 const permissionsRoutes = require('./modules/permissions/permissions.routes');
 const roleRoutes = require('./modules/roles/role.routes');
+const setupRoutes = require('./modules/setup/setup.routes');
 
 
 // Inicializar app
@@ -71,6 +72,9 @@ app.use('/api/permissions', permissionsRoutes);
 
 // Rutas de roles
 app.use('/api/roles', roleRoutes);
+
+// Rutas de configuración temporal (para desarrollo)
+app.use('/api/setup', setupRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;

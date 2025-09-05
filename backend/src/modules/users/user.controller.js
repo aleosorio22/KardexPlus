@@ -171,7 +171,7 @@ exports.getAllUsers = async (req, res) => {
                    u.Usuario_Estado, r.Rol_Nombre, r.Rol_Descripcion
             FROM Usuarios u 
             LEFT JOIN Roles r ON u.Rol_Id = r.Rol_Id 
-            WHERE u.Usuario_Estado = 1
+            ORDER BY u.Usuario_Nombre, u.Usuario_Apellido
         `);
         
         res.json({
@@ -310,6 +310,51 @@ exports.deleteUser = async (req, res) => {
         });
     } catch (error) {
         console.error('Error al eliminar usuario:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+/**
+ * Cambia el estado de un usuario (activo/inactivo)
+ * @param {Object} req - Objeto de solicitud
+ * @param {Object} res - Objeto de respuesta
+ */
+exports.toggleUserStatus = async (req, res) => {
+    try {
+        // Primero obtenemos el usuario actual
+        const user = await UserModel.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+
+        // Cambiar el estado (si está activo lo desactivamos, si está inactivo lo activamos)
+        const newStatus = user.Usuario_Estado === 1 ? 0 : 1;
+        
+        const [result] = await db.execute(
+            'UPDATE Usuarios SET Usuario_Estado = ? WHERE Usuario_Id = ?',
+            [newStatus, req.params.id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: `Usuario ${newStatus === 1 ? 'activado' : 'desactivado'} exitosamente`,
+            data: { Usuario_Estado: newStatus }
+        });
+    } catch (error) {
+        console.error('Error al cambiar estado del usuario:', error);
         res.status(500).json({
             success: false,
             message: error.message

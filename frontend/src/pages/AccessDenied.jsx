@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiHome, FiArrowLeft, FiAlertTriangle, FiSettings } from 'react-icons/fi';
+import { FiHome, FiArrowLeft, FiShield, FiSettings } from 'react-icons/fi';
 
-const NotFound = () => {
+const AccessDenied = () => {
   const location = useLocation();
   
   // Detectar si estamos dentro del dashboard (layout admin)
@@ -15,25 +15,28 @@ const NotFound = () => {
         <div className="max-w-lg w-full text-center">
           {/* Icono principal */}
           <div className="mb-8">
-            <div className="bg-red-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-              <FiAlertTriangle className="w-10 h-10 text-red-500" />
+            <div className="bg-orange-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+              <FiShield className="w-10 h-10 text-orange-500" />
             </div>
             
-            {/* Número 404 */}
-            <h1 className="text-5xl font-bold text-gray-800 mb-2">404</h1>
+            {/* Número 403 */}
+            <h1 className="text-5xl font-bold text-gray-800 mb-2">403</h1>
             <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              Página no encontrada
+              Acceso denegado
             </h2>
           </div>
 
           {/* Mensaje descriptivo */}
           <div className="mb-8">
             <p className="text-gray-600 mb-4">
-              La página que estás buscando no existe en esta sección del sistema.
+              No tienes permisos para acceder a esta sección del sistema.
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-orange-700">
                 <strong>Ruta solicitada:</strong> {location.pathname}
+              </p>
+              <p className="text-sm text-orange-600 mt-2">
+                Contacta a tu administrador si necesitas acceso a esta funcionalidad.
               </p>
             </div>
           </div>
@@ -46,14 +49,6 @@ const NotFound = () => {
             >
               <FiHome size={18} />
               <span>Ir al Dashboard</span>
-            </Link>
-            
-            <Link
-              to="/dashboard/configuracion/usuarios"
-              className="flex items-center justify-center space-x-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors w-full"
-            >
-              <FiSettings size={18} />
-              <span>Ir a Configuración</span>
             </Link>
             
             <button
@@ -75,29 +70,32 @@ const NotFound = () => {
       <div className="max-w-md w-full text-center">
         {/* Icono principal */}
         <div className="mb-8">
-          <div className="bg-red-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
-            <FiAlertTriangle className="w-12 h-12 text-red-500" />
+          <div className="bg-orange-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+            <FiShield className="w-12 h-12 text-orange-500" />
           </div>
           
-          {/* Número 404 */}
-          <h1 className="text-6xl font-bold text-gray-800 mb-2">404</h1>
+          {/* Número 403 */}
+          <h1 className="text-6xl font-bold text-gray-800 mb-2">403</h1>
           <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-            Página no encontrada
+            Acceso denegado
           </h2>
         </div>
 
         {/* Mensaje descriptivo */}
         <div className="mb-8">
           <p className="text-gray-600 mb-4">
-            Lo sentimos, la página que estás buscando no existe o ha sido movida.
+            No tienes permisos suficientes para acceder a esta página.
           </p>
-          <div className="bg-white rounded-lg p-4 mb-4 border">
+          <div className="bg-white rounded-lg p-4 mb-4 border border-orange-200">
             <p className="text-sm text-gray-600">
               <strong>Ruta solicitada:</strong> {location.pathname}
             </p>
+            <p className="text-sm text-orange-600 mt-2">
+              Tu rol actual no incluye los permisos necesarios para esta funcionalidad.
+            </p>
           </div>
           <p className="text-sm text-gray-500">
-            Puedes regresar al dashboard o usar la navegación para encontrar lo que necesitas.
+            Contacta a tu administrador si necesitas acceso a esta sección.
           </p>
         </div>
 
@@ -131,4 +129,4 @@ const NotFound = () => {
   );
 };
 
-export default NotFound;
+export default AccessDenied;
