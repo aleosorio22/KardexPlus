@@ -11,6 +11,7 @@ import Users from "../pages/admin/Users";
 import Roles from "../pages/admin/Roles";
 import RolePermissions from "../pages/admin/RolePermissions";
 import SystemSetup from "../pages/admin/SystemSetup";
+import Categories from "../pages/Categories";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -63,6 +64,11 @@ function AppRouter() {
                 <Route 
                   path="configuracion/roles/:id/permisos" 
                   element={<RolePermissions />}
+                />
+                
+                <Route 
+                  path="inventario/categorias" 
+                  element={<Categories />}
                 />
                 
                 <Route 

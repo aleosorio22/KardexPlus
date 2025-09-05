@@ -16,7 +16,8 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiClock,
-  FiBox
+  FiBox,
+  FiTag
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -86,6 +87,26 @@ export default function Sidebar() {
       permission: "dashboard.ver"
     },
     { 
+      name: "Inventario", 
+      icon: FiPackage, 
+      hasSubmenu: true,
+      modulePermission: "inventario",
+      submenu: [
+        { 
+          name: "Categorías", 
+          icon: FiTag, 
+          path: "/inventario/categorias",
+          permission: "categorias.ver"
+        },
+        { 
+          name: "Items", 
+          icon: FiBox, 
+          path: "/inventario/items",
+          permission: "items.ver"
+        },
+      ]
+    },
+    { 
       name: "Bodegas", 
       icon: FiBox, 
       path: "/bodegas",
@@ -114,12 +135,6 @@ export default function Sidebar() {
           icon: FiUsers, 
           path: "/configuracion/usuarios",
           permission: "usuarios.ver"
-        },
-        { 
-          name: "Ítems", 
-          icon: FiPackage, 
-          path: "/configuracion/items",
-          permission: "items.ver"
         },
         { 
           name: "Almacenes y Producción", 
