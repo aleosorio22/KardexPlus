@@ -324,15 +324,21 @@ exports.deleteUser = async (req, res) => {
  */
 exports.toggleUserStatus = async (req, res) => {
     try {
-        // Primero obtenemos el usuario actual
-        const user = await UserModel.findById(req.params.id);
-        if (!user) {
+        // Primero obtenemos el usuario actual SIN filtrar por estado
+        const [users] = await db.execute(
+            'SELECT Usuario_Id, Usuario_Nombre, Usuario_Apellido, Usuario_Estado FROM Usuarios WHERE Usuario_Id = ?',
+            [req.params.id]
+        );
+        
+        if (users.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Usuario no encontrado'
             });
         }
 
+        const user = users[0];
+        
         // Cambiar el estado (si está activo lo desactivamos, si está inactivo lo activamos)
         const newStatus = user.Usuario_Estado === 1 ? 0 : 1;
         
@@ -344,7 +350,7 @@ exports.toggleUserStatus = async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Usuario no encontrado'
+                message: 'No se pudo actualizar el usuario'
             });
         }
         
