@@ -17,7 +17,8 @@ import {
   FiChevronRight,
   FiClock,
   FiBox,
-  FiTag
+  FiTag,
+  FiTool
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -135,6 +136,12 @@ export default function Sidebar() {
           icon: FiUsers, 
           path: "/configuracion/usuarios",
           permission: "usuarios.ver"
+        },
+        { 
+          name: "Unidades de Medida", 
+          icon: FiTool, 
+          path: "/configuracion/unidades-medida",
+          permission: "categorias.ver"
         },
         { 
           name: "Almacenes y Producción", 
