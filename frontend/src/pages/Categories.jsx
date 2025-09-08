@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 // Components
 import { DataTable, SearchAndFilter, EmptyState, DataTableSkeleton } from '../components/DataTable';
 import { CategoryFormModal } from '../components/Modals';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Services
 import categoryService from '../services/categoryService';
@@ -26,6 +27,11 @@ const Categories = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Estados para el modal de confirmación
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Configuración de columnas para la tabla
   const columns = [
@@ -150,23 +156,38 @@ const Categories = () => {
   };
 
   // Eliminar categoría
-  const handleDeleteCategory = async (category) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar la categoría "${category.CategoriaItem_Nombre}"?`)) {
-      return;
-    }
+  const handleDeleteCategory = (category) => {
+    setCategoryToDelete(category);
+    setIsConfirmModalOpen(true);
+  };
+
+  // Confirmar eliminación
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
 
     try {
-      const response = await categoryService.deleteCategory(category.CategoriaItem_Id);
+      setIsDeleting(true);
+      const response = await categoryService.deleteCategory(categoryToDelete.CategoriaItem_Id);
       
       if (response.success) {
         toast.success('Categoría eliminada exitosamente');
         await loadCategories();
         await loadStats();
+        setIsConfirmModalOpen(false);
+        setCategoryToDelete(null);
       }
     } catch (error) {
       console.error('Error deleting category:', error);
       toast.error(error.message || 'Error al eliminar la categoría');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  // Cancelar eliminación
+  const handleCancelDelete = () => {
+    setIsConfirmModalOpen(false);
+    setCategoryToDelete(null);
   };
 
   // Filtrar categorías según los criterios de búsqueda
@@ -345,6 +366,21 @@ const Categories = () => {
         onSubmit={handleFormSubmit}
         category={selectedCategory}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Modal de confirmación para eliminar */}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        title="Eliminar Categoría"
+        message={`¿Estás seguro de que deseas eliminar la categoría "${categoryToDelete?.CategoriaItem_Nombre}"?`}
+        description="Esta acción no se puede deshacer. La categoría será eliminada permanentemente."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

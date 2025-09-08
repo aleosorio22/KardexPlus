@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { FiRefreshCw, FiHome, FiAlertTriangle } from 'react-icons/fi';
 
 class ErrorBoundary extends React.Component {
@@ -84,13 +83,13 @@ class ErrorBoundary extends React.Component {
                 <span>Recargar página</span>
               </button>
               
-              <Link
-                to="/dashboard"
+              <button
+                onClick={() => window.location.href = '/dashboard'}
                 className="flex items-center justify-center space-x-2 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors w-full"
               >
                 <FiHome size={18} />
                 <span>Ir al Dashboard</span>
-              </Link>
+              </button>
             </div>
 
             {/* Información adicional */}
