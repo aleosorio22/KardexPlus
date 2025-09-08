@@ -45,4 +45,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ocultar scrollbar pero mantener funcionalidad de scroll */
+  .scrollbar-hide {
+    /* Firefox */
+    scrollbar-width: none;
+    /* Safari e IE */
+    -ms-overflow-style: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
