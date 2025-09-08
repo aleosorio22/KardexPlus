@@ -19,6 +19,7 @@ const permissionsRoutes = require('./modules/permissions/permissions.routes');
 const roleRoutes = require('./modules/roles/role.routes');
 const setupRoutes = require('./modules/setup/setup.routes');
 const categoryRoutes = require('./modules/categories/category.routes');
+const unidadMedidaRoutes = require('./modules/unidades-medida/unidad-medida.routes');
 
 
 // Inicializar app
@@ -76,6 +77,9 @@ app.use('/api/roles', roleRoutes);
 
 // Rutas de categorías
 app.use('/api/categories', categoryRoutes);
+
+// Rutas de unidades de medida
+app.use('/api/unidades-medida', unidadMedidaRoutes);
 
 // Rutas de configuración temporal (para desarrollo)
 app.use('/api/setup', setupRoutes);
