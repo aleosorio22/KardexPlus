@@ -1,216 +1,121 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import axios from 'axios';
 
-class PresentacionService {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3499/api';
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+};
+
+const presentacionService = {
   // Obtener todas las presentaciones
-  async getAllPresentaciones() {
+  getAllPresentaciones: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener presentaciones');
-      }
-
-      return data;
+      const response = await axios.get(`${API_BASE_URL}/presentaciones`, getAuthHeaders());
+      return response.data;
     } catch (error) {
-      console.error('Error en getAllPresentaciones:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
-  // Obtener presentación por ID
-  async getPresentacionById(id) {
+  // Obtener una presentación por ID
+  getPresentacionById: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener presentación');
-      }
-
-      return data;
+      const response = await axios.get(`${API_BASE_URL}/presentaciones/${id}`, getAuthHeaders());
+      return response.data;
     } catch (error) {
-      console.error('Error en getPresentacionById:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Obtener presentaciones por unidad de medida
-  async getPresentacionesByUnidadMedida(unidadMedidaId) {
+  getPresentacionesByUnidadMedida: async (unidadMedidaId) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/unidad-medida/${unidadMedidaId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener presentaciones por unidad de medida');
-      }
-
-      return data;
+      const response = await axios.get(`${API_BASE_URL}/presentaciones/unidad-medida/${unidadMedidaId}`, getAuthHeaders());
+      return response.data;
     } catch (error) {
-      console.error('Error en getPresentacionesByUnidadMedida:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
-  // Crear nueva presentación
-  async createPresentacion(presentacionData) {
+  // Crear presentación
+  createPresentacion: async (presentacionData) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(presentacionData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al crear presentación');
-      }
-
-      return data;
+      const response = await axios.post(
+        `${API_BASE_URL}/presentaciones`,
+        presentacionData,
+        getAuthHeaders()
+      );
+      return response.data;
     } catch (error) {
-      console.error('Error en createPresentacion:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Actualizar presentación
-  async updatePresentacion(id, presentacionData) {
+  updatePresentacion: async (id, presentacionData) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(presentacionData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al actualizar presentación');
-      }
-
-      return data;
+      const response = await axios.put(
+        `${API_BASE_URL}/presentaciones/${id}`, 
+        presentacionData, 
+        getAuthHeaders()
+      );
+      return response.data;
     } catch (error) {
-      console.error('Error en updatePresentacion:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Eliminar presentación
-  async deletePresentacion(id) {
+  deletePresentacion: async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al eliminar presentación');
-      }
-
-      return data;
+      const response = await axios.delete(`${API_BASE_URL}/presentaciones/${id}`, getAuthHeaders());
+      return response.data;
     } catch (error) {
-      console.error('Error en deletePresentacion:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Obtener estadísticas de presentaciones
-  async getPresentacionStats() {
+  getPresentacionStats: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/stats`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener estadísticas');
-      }
-
-      return data;
+      const response = await axios.get(
+        `${API_BASE_URL}/presentaciones/stats`,
+        getAuthHeaders()
+      );
+      return response.data;
     } catch (error) {
-      console.error('Error en getPresentacionStats:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Buscar presentaciones
-  async searchPresentaciones(searchTerm) {
+  searchPresentaciones: async (searchTerm) => {
     try {
-      const response = await fetch(`${API_URL}/api/presentaciones/search?q=${encodeURIComponent(searchTerm)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al buscar presentaciones');
-      }
-
-      return data;
+      const response = await axios.get(
+        `${API_BASE_URL}/presentaciones/search?q=${encodeURIComponent(searchTerm)}`, 
+        getAuthHeaders()
+      );
+      return response.data;
     } catch (error) {
-      console.error('Error en searchPresentaciones:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
-  }
+  },
 
   // Obtener todas las unidades de medida (para los selectores)
-  async getAllUnidadesMedida() {
+  getAllUnidadesMedida: async () => {
     try {
-      const response = await fetch(`${API_URL}/api/unidades-medida`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al obtener unidades de medida');
-      }
-
-      return data;
+      const response = await axios.get(`${API_BASE_URL}/unidades-medida`, getAuthHeaders());
+      return response.data;
     } catch (error) {
-      console.error('Error en getAllUnidadesMedida:', error);
-      throw error;
+      throw error.response ? error.response.data : error;
     }
   }
-}
+};
 
-// Exportar una instancia del servicio
-const presentacionService = new PresentacionService();
 export default presentacionService;

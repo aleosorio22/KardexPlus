@@ -13,6 +13,7 @@ import RolePermissions from "../pages/admin/RolePermissions";
 import SystemSetup from "../pages/admin/SystemSetup";
 import UnidadesMedida from "../pages/admin/UnidadesMedida";
 import Categories from "../pages/Categories";
+import Presentaciones from "../pages/Presentaciones";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -70,6 +71,11 @@ function AppRouter() {
                 <Route 
                   path="configuracion/unidades-medida" 
                   element={<UnidadesMedida />}
+                />
+                
+                <Route 
+                  path="configuracion/presentaciones" 
+                  element={<Presentaciones />}
                 />
                 
                 <Route 
