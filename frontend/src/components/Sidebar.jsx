@@ -144,6 +144,12 @@ export default function Sidebar() {
           permission: "categorias.ver"
         },
         { 
+          name: "Presentaciones", 
+          icon: FiPackage, 
+          path: "/configuracion/presentaciones",
+          permission: "items.ver"
+        },
+        { 
           name: "Almacenes y Producción", 
           icon: FiSettings, 
           path: "/configuracion/almacenes",
