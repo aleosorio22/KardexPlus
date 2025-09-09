@@ -14,6 +14,7 @@ import SystemSetup from "../pages/admin/SystemSetup";
 import UnidadesMedida from "../pages/admin/UnidadesMedida";
 import Categories from "../pages/Categories";
 import Presentaciones from "../pages/Presentaciones";
+import Items from "../pages/Items";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -81,6 +82,11 @@ function AppRouter() {
                 <Route 
                   path="inventario/categorias" 
                   element={<Categories />}
+                />
+                
+                <Route 
+                  path="inventario/items" 
+                  element={<Items />}
                 />
                 
                 <Route 

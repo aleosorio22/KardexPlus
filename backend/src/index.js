@@ -21,6 +21,7 @@ const setupRoutes = require('./modules/setup/setup.routes');
 const categoryRoutes = require('./modules/categories/category.routes');
 const unidadMedidaRoutes = require('./modules/unidades-medida/unidad-medida.routes');
 const presentacionRoutes = require('./modules/presentaciones/presentacion.routes');
+const itemRoutes = require('./modules/items/item.routes');
 
 
 // Inicializar app
@@ -84,6 +85,9 @@ app.use('/api/unidades-medida', unidadMedidaRoutes);
 
 // Rutas de presentaciones
 app.use('/api/presentaciones', presentacionRoutes);
+
+// Rutas de items
+app.use('/api/items', itemRoutes);
 
 // Rutas de configuración temporal (para desarrollo)
 app.use('/api/setup', setupRoutes);
