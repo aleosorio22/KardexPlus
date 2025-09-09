@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiBox, FiPlus, FiEdit, FiTrash2, FiDollarSign, FiBarChart, FiTag, FiPackage, FiToggleLeft, FiToggleRight, FiRotateCcw } from 'react-icons/fi';
+import { FiBox, FiPlus, FiEdit, FiTrash2, FiDollarSign, FiBarChart, FiTag, FiPackage, FiRotateCcw, FiFileText } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { DataTable, SearchAndFilter } from '../components/DataTable';
 import { ItemFormModal } from '../components/Modals';
 import ConfirmModal from '../components/ConfirmModal';
@@ -8,6 +9,7 @@ import categoryService from '../services/categoryService';
 import toast from 'react-hot-toast';
 
 const Items = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +131,6 @@ const Items = () => {
       render: (item) => (
         <div className="space-y-1">
           <div className="flex items-center space-x-1">
-            <FiDollarSign className="w-3 h-3 text-green-600" />
             <span className="text-sm font-medium text-green-600">
               Q{parseFloat(item.Item_Costo_Unitario || 0).toFixed(2)}
             </span>
@@ -368,19 +369,24 @@ const Items = () => {
     }
   };
 
+  // Navegar a los detalles del item
+  const handleViewItemDetails = (item) => {
+    navigate(`/inventario/items/${item.Item_Id}/detalles`);
+  };
+
   // Renderizar acciones de fila
   const renderRowActions = (item) => (
     <>
+      <button
+        onClick={() => handleViewItemDetails(item)}
+        className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+        title="Ver detalles del item"
+      >
+        <FiFileText className="w-4 h-4" />
+      </button>
+
       {item.Item_Estado ? (
-        <>
-          <button
-            onClick={() => handleToggleStatus(item)}
-            className="p-2 rounded-lg text-orange-600 hover:bg-orange-50 transition-colors"
-            title="Desactivar item"
-          >
-            <FiToggleRight className="w-4 h-4" />
-          </button>
-          
+        <>          
           <button
             onClick={() => handleEditItem(item)}
             className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
@@ -398,23 +404,13 @@ const Items = () => {
           </button>
         </>
       ) : (
-        <>
-          <button
-            onClick={() => handleToggleStatus(item)}
-            className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
-            title="Activar item"
-          >
-            <FiToggleLeft className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => handleRestoreItem(item)}
-            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-            title="Restaurar item"
-          >
-            <FiRotateCcw className="w-4 h-4" />
-          </button>
-        </>
+        <button
+          onClick={() => handleRestoreItem(item)}
+          className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+          title="Restaurar item"
+        >
+          <FiRotateCcw className="w-4 h-4" />
+        </button>
       )}
     </>
   );
@@ -471,8 +467,8 @@ const Items = () => {
             <p className="text-blue-800 font-medium">Acciones disponibles:</p>
             <ul className="text-blue-700 mt-1 space-y-1">
               <li className="flex items-center space-x-2">
-                <FiToggleRight className="w-4 h-4" />
-                <span><strong>Toggle:</strong> Activar/Desactivar item</span>
+                <FiFileText className="w-4 h-4" />
+                <span><strong>Detalles:</strong> Ver información detallada del item</span>
               </li>
               <li className="flex items-center space-x-2">
                 <FiEdit className="w-4 h-4" />

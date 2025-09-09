@@ -15,6 +15,7 @@ import UnidadesMedida from "../pages/admin/UnidadesMedida";
 import Categories from "../pages/Categories";
 import Presentaciones from "../pages/Presentaciones";
 import Items from "../pages/Items";
+import ItemDetails from "../pages/ItemDetails";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -87,6 +88,11 @@ function AppRouter() {
                 <Route 
                   path="inventario/items" 
                   element={<Items />}
+                />
+                
+                <Route 
+                  path="inventario/items/:id/detalles" 
+                  element={<ItemDetails />}
                 />
                 
                 <Route 
