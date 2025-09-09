@@ -1,0 +1,417 @@
+const db = require('../../core/config/database');
+
+class ItemPresentacionModel {
+    /**
+     * Crea una nueva presentación de item en la base de datos
+     * @param {Object} itemPresentacionData - Datos de la presentación del item
+     * @returns {Promise<number>} - ID de la presentación creada
+     */
+    static async create(itemPresentacionData) {
+        const {
+            Item_Id,
+            Presentacion_Id,
+            Item_Presentacion_CodigoSKU,
+            Item_Presentaciones_CodigoBarras,
+            Item_Presentaciones_Costo,
+            Item_Presentaciones_Precio
+        } = itemPresentacionData;
+
+        // Verificar duplicados
+        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Id)) {
+            throw new Error('Ya existe una presentación para este item');
+        }
+
+        if (Item_Presentacion_CodigoSKU && await this.existsBySKU(Item_Presentacion_CodigoSKU)) {
+            throw new Error('Ya existe una presentación con este código SKU');
+        }
+
+        if (Item_Presentaciones_CodigoBarras && await this.existsByBarcode(Item_Presentaciones_CodigoBarras)) {
+            throw new Error('Ya existe una presentación con este código de barras');
+        }
+
+        const [result] = await db.execute(`
+            INSERT INTO Items_Presentaciones (
+                Item_Id,
+                Presentacion_Id,
+                Item_Presentacion_CodigoSKU,
+                Item_Presentaciones_CodigoBarras,
+                Item_Presentaciones_Costo,
+                Item_Presentaciones_Precio
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            Item_Id,
+            Presentacion_Id,
+            Item_Presentacion_CodigoSKU || null,
+            Item_Presentaciones_CodigoBarras || null,
+            Item_Presentaciones_Costo || null,
+            Item_Presentaciones_Precio || null
+        ]);
+        
+        return result.insertId;
+    }
+
+    /**
+     * Obtiene todas las presentaciones de items
+     * @returns {Promise<Array>} - Array de presentaciones
+     */
+    static async findAll() {
+        const [presentaciones] = await db.execute(`
+            SELECT 
+                ip.Item_Presentaciones_Id,
+                ip.Item_Id,
+                ip.Presentacion_Id,
+                ip.Item_Presentacion_CodigoSKU,
+                ip.Item_Presentaciones_CodigoBarras,
+                ip.Item_Presentaciones_Costo,
+                ip.Item_Presentaciones_Precio,
+                i.Item_Nombre,
+                i.Item_Costo_Unitario,
+                c.CategoriaItem_Nombre,
+                p.Presentacion_Nombre,
+                p.Presentacion_Cantidad,
+                um.UnidadMedida_Nombre,
+                um.UnidadMedida_Prefijo
+            FROM Items_Presentaciones ip
+            INNER JOIN Items i ON ip.Item_Id = i.Item_Id
+            INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
+            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            ORDER BY i.Item_Nombre ASC, p.Presentacion_Nombre ASC
+        `);
+        return presentaciones;
+    }
+
+    /**
+     * Busca una presentación por ID
+     * @param {number} id - ID de la presentación
+     * @returns {Promise<Object|undefined>} - Presentación encontrada o undefined
+     */
+    static async findById(id) {
+        const [presentaciones] = await db.execute(`
+            SELECT 
+                ip.Item_Presentaciones_Id,
+                ip.Item_Id,
+                ip.Presentacion_Id,
+                ip.Item_Presentacion_CodigoSKU,
+                ip.Item_Presentaciones_CodigoBarras,
+                ip.Item_Presentaciones_Costo,
+                ip.Item_Presentaciones_Precio,
+                i.Item_Nombre,
+                i.Item_Costo_Unitario,
+                i.Item_Estado,
+                c.CategoriaItem_Nombre,
+                p.Presentacion_Nombre,
+                p.Presentacion_Cantidad,
+                um.UnidadMedida_Nombre,
+                um.UnidadMedida_Prefijo
+            FROM Items_Presentaciones ip
+            INNER JOIN Items i ON ip.Item_Id = i.Item_Id
+            INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
+            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            WHERE ip.Item_Presentaciones_Id = ?
+        `, [id]);
+        return presentaciones[0];
+    }
+
+    /**
+     * Obtiene todas las presentaciones de un item específico
+     * @param {number} itemId - ID del item
+     * @returns {Promise<Array>} - Array de presentaciones del item
+     */
+    static async findByItemId(itemId) {
+        const [presentaciones] = await db.execute(`
+            SELECT 
+                ip.Item_Presentaciones_Id,
+                ip.Item_Id,
+                ip.Presentacion_Id,
+                ip.Item_Presentacion_CodigoSKU,
+                ip.Item_Presentaciones_CodigoBarras,
+                ip.Item_Presentaciones_Costo,
+                ip.Item_Presentaciones_Precio,
+                i.Item_Nombre,
+                i.Item_Costo_Unitario,
+                p.Presentacion_Nombre,
+                p.Presentacion_Cantidad,
+                um.UnidadMedida_Nombre,
+                um.UnidadMedida_Prefijo
+            FROM Items_Presentaciones ip
+            INNER JOIN Items i ON ip.Item_Id = i.Item_Id
+            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
+            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            WHERE ip.Item_Id = ?
+            ORDER BY p.Presentacion_Cantidad ASC
+        `, [itemId]);
+        return presentaciones;
+    }
+
+    /**
+     * Actualiza una presentación de item
+     * @param {number} id - ID de la presentación
+     * @param {Object} itemPresentacionData - Datos actualizados
+     * @returns {Promise<boolean>} - true si se actualizó, false si no
+     */
+    static async update(id, itemPresentacionData) {
+        const {
+            Item_Id,
+            Presentacion_Id,
+            Item_Presentacion_CodigoSKU,
+            Item_Presentaciones_CodigoBarras,
+            Item_Presentaciones_Costo,
+            Item_Presentaciones_Precio
+        } = itemPresentacionData;
+
+        // Verificar duplicados (excluyendo la presentación actual)
+        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Id, id)) {
+            throw new Error('Ya existe una presentación para este item');
+        }
+
+        if (Item_Presentacion_CodigoSKU && await this.existsBySKU(Item_Presentacion_CodigoSKU, id)) {
+            throw new Error('Ya existe una presentación con este código SKU');
+        }
+
+        if (Item_Presentaciones_CodigoBarras && await this.existsByBarcode(Item_Presentaciones_CodigoBarras, id)) {
+            throw new Error('Ya existe una presentación con este código de barras');
+        }
+
+        const [result] = await db.execute(`
+            UPDATE Items_Presentaciones SET
+                Item_Id = ?,
+                Presentacion_Id = ?,
+                Item_Presentacion_CodigoSKU = ?,
+                Item_Presentaciones_CodigoBarras = ?,
+                Item_Presentaciones_Costo = ?,
+                Item_Presentaciones_Precio = ?
+            WHERE Item_Presentaciones_Id = ?
+        `, [
+            Item_Id,
+            Presentacion_Id,
+            Item_Presentacion_CodigoSKU || null,
+            Item_Presentaciones_CodigoBarras || null,
+            Item_Presentaciones_Costo || null,
+            Item_Presentaciones_Precio || null,
+            id
+        ]);
+        
+        return result.affectedRows > 0;
+    }
+
+    /**
+     * Elimina una presentación de item
+     * @param {number} id - ID de la presentación
+     * @returns {Promise<boolean>} - true si se eliminó, false si no
+     */
+    static async delete(id) {
+        const [result] = await db.execute(
+            'DELETE FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
+            [id]
+        );
+        
+        return result.affectedRows > 0;
+    }
+
+    /**
+     * Busca presentaciones con paginación
+     * @param {number} offset - Número de registros a saltar
+     * @param {number} limit - Número máximo de registros a retornar
+     * @param {string} search - Término de búsqueda (opcional)
+     * @param {string} itemId - ID del item para filtrar (opcional)
+     * @param {string} presentacionId - ID de presentación para filtrar (opcional)
+     * @returns {Promise<Object>} - Objeto con data y total
+     */
+    static async findWithPagination(offset = 0, limit = 10, search = '', itemId = '', presentacionId = '') {
+        let query = `
+            SELECT 
+                ip.Item_Presentaciones_Id,
+                ip.Item_Id,
+                ip.Presentacion_Id,
+                ip.Item_Presentacion_CodigoSKU,
+                ip.Item_Presentaciones_CodigoBarras,
+                ip.Item_Presentaciones_Costo,
+                ip.Item_Presentaciones_Precio,
+                i.Item_Nombre,
+                i.Item_Costo_Unitario,
+                c.CategoriaItem_Nombre,
+                p.Presentacion_Nombre,
+                p.Presentacion_Cantidad,
+                um.UnidadMedida_Nombre,
+                um.UnidadMedida_Prefijo
+            FROM Items_Presentaciones ip
+            INNER JOIN Items i ON ip.Item_Id = i.Item_Id
+            INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
+            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+        `;
+        let countQuery = 'SELECT COUNT(*) as total FROM Items_Presentaciones ip INNER JOIN Items i ON ip.Item_Id = i.Item_Id INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id';
+        let params = [];
+        let whereConditions = [];
+
+        if (search && search.trim() !== '') {
+            const searchPattern = `%${search.trim()}%`;
+            whereConditions.push('(i.Item_Nombre LIKE ? OR p.Presentacion_Nombre LIKE ? OR ip.Item_Presentacion_CodigoSKU LIKE ? OR ip.Item_Presentaciones_CodigoBarras LIKE ?)');
+            params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+        }
+
+        if (itemId && itemId.trim() !== '') {
+            whereConditions.push('ip.Item_Id = ?');
+            params.push(parseInt(itemId));
+        }
+
+        if (presentacionId && presentacionId.trim() !== '') {
+            whereConditions.push('ip.Presentacion_Id = ?');
+            params.push(parseInt(presentacionId));
+        }
+
+        if (whereConditions.length > 0) {
+            const whereClause = ' WHERE ' + whereConditions.join(' AND ');
+            query += whereClause;
+            countQuery += whereClause;
+        }
+
+        query += ' ORDER BY i.Item_Nombre ASC, p.Presentacion_Cantidad ASC LIMIT ? OFFSET ?';
+        
+        const queryParams = [...params, parseInt(limit), parseInt(offset)];
+        const countParams = [...params];
+
+        const [presentaciones] = await db.execute(query, queryParams);
+        const [countResult] = await db.execute(countQuery, countParams);
+
+        return {
+            data: presentaciones,
+            total: countResult[0].total
+        };
+    }
+
+    /**
+     * Cuenta el número total de presentaciones
+     * @returns {Promise<number>} - Número total de presentaciones
+     */
+    static async count() {
+        const [result] = await db.execute('SELECT COUNT(*) as total FROM Items_Presentaciones');
+        return result[0].total;
+    }
+
+    /**
+     * Verifica si una presentación existe
+     * @param {number} id - ID de la presentación
+     * @returns {Promise<boolean>} - true si existe, false si no
+     */
+    static async exists(id) {
+        const [result] = await db.execute(
+            'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
+            [id]
+        );
+        return result[0].count > 0;
+    }
+
+    /**
+     * Verifica si existe una presentación para un item y presentación específicos
+     * @param {number} itemId - ID del item
+     * @param {number} presentacionId - ID de la presentación
+     * @param {number} excludeId - ID a excluir de la búsqueda (opcional)
+     * @returns {Promise<boolean>} - true si existe, false si no
+     */
+    static async existsByItemAndPresentacion(itemId, presentacionId, excludeId = null) {
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Id = ? AND Presentacion_Id = ?';
+        let params = [itemId, presentacionId];
+        
+        if (excludeId) {
+            query += ' AND Item_Presentaciones_Id != ?';
+            params.push(excludeId);
+        }
+        
+        const [result] = await db.execute(query, params);
+        return result[0].count > 0;
+    }
+
+    /**
+     * Verifica si existe una presentación con el código SKU dado
+     * @param {string} sku - Código SKU
+     * @param {number} excludeId - ID a excluir de la búsqueda (opcional)
+     * @returns {Promise<boolean>} - true si existe, false si no
+     */
+    static async existsBySKU(sku, excludeId = null) {
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentacion_CodigoSKU = ?';
+        let params = [sku];
+        
+        if (excludeId) {
+            query += ' AND Item_Presentaciones_Id != ?';
+            params.push(excludeId);
+        }
+        
+        const [result] = await db.execute(query, params);
+        return result[0].count > 0;
+    }
+
+    /**
+     * Verifica si existe una presentación con el código de barras dado
+     * @param {string} barcode - Código de barras
+     * @param {number} excludeId - ID a excluir de la búsqueda (opcional)
+     * @returns {Promise<boolean>} - true si existe, false si no
+     */
+    static async existsByBarcode(barcode, excludeId = null) {
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentaciones_CodigoBarras = ?';
+        let params = [barcode];
+        
+        if (excludeId) {
+            query += ' AND Item_Presentaciones_Id != ?';
+            params.push(excludeId);
+        }
+        
+        const [result] = await db.execute(query, params);
+        return result[0].count > 0;
+    }
+
+    /**
+     * Busca presentaciones por término
+     * @param {string} searchTerm - Término de búsqueda
+     * @returns {Promise<Array>} - Array de presentaciones encontradas
+     */
+    static async search(searchTerm) {
+        const searchPattern = `%${searchTerm}%`;
+        const [presentaciones] = await db.execute(`
+            SELECT 
+                ip.Item_Presentaciones_Id,
+                ip.Item_Id,
+                ip.Presentacion_Id,
+                ip.Item_Presentacion_CodigoSKU,
+                ip.Item_Presentaciones_CodigoBarras,
+                ip.Item_Presentaciones_Costo,
+                ip.Item_Presentaciones_Precio,
+                i.Item_Nombre,
+                p.Presentacion_Nombre,
+                p.Presentacion_Cantidad,
+                um.UnidadMedida_Prefijo
+            FROM Items_Presentaciones ip
+            INNER JOIN Items i ON ip.Item_Id = i.Item_Id
+            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
+            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            WHERE i.Item_Nombre LIKE ? 
+               OR p.Presentacion_Nombre LIKE ?
+               OR ip.Item_Presentacion_CodigoSKU LIKE ?
+               OR ip.Item_Presentaciones_CodigoBarras LIKE ?
+            ORDER BY i.Item_Nombre ASC, p.Presentacion_Cantidad ASC
+            LIMIT 50
+        `, [searchPattern, searchPattern, searchPattern, searchPattern]);
+        return presentaciones;
+    }
+
+    /**
+     * Obtiene estadísticas de presentaciones
+     * @returns {Promise<Object>} - Estadísticas
+     */
+    static async getStats() {
+        const [stats] = await db.execute(`
+            SELECT 
+                COUNT(*) as totalPresentaciones,
+                COUNT(DISTINCT ip.Item_Id) as itemsConPresentaciones,
+                COUNT(DISTINCT ip.Presentacion_Id) as presentacionesUsadas,
+                AVG(ip.Item_Presentaciones_Costo) as costoPromedio,
+                AVG(ip.Item_Presentaciones_Precio) as precioPromedio
+            FROM Items_Presentaciones ip
+        `);
+        return stats[0];
+    }
+}
+
+module.exports = ItemPresentacionModel;
