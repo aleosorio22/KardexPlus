@@ -12,11 +12,11 @@ class ItemModel {
             Item_Codigo_Barra,
             Item_Nombre,
             Item_Costo_Unitario,
-            Item_Precio_Sugerido,
             Item_Stock_Min,
             Item_Stock_Max,
             Item_Estado,
-            CategoriaItem_Id
+            CategoriaItem_Id,
+            UnidadMedidaBase_Id
         } = itemData;
 
         // Verificar duplicados
@@ -38,22 +38,22 @@ class ItemModel {
                 Item_Codigo_Barra,
                 Item_Nombre,
                 Item_Costo_Unitario,
-                Item_Precio_Sugerido,
                 Item_Stock_Min,
                 Item_Stock_Max,
                 Item_Estado,
-                CategoriaItem_Id
+                CategoriaItem_Id,
+                UnidadMedidaBase_Id
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             Item_Codigo_SKU || null,
             Item_Codigo_Barra || null,
             Item_Nombre,
             Item_Costo_Unitario,
-            Item_Precio_Sugerido || null,
             Item_Stock_Min || 0,
             Item_Stock_Max || null,
             Item_Estado !== undefined ? Item_Estado : true,
-            CategoriaItem_Id
+            CategoriaItem_Id,
+            UnidadMedidaBase_Id
         ]);
         
         return result.insertId;
@@ -71,15 +71,18 @@ class ItemModel {
                 i.Item_Codigo_Barra,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                i.Item_Precio_Sugerido,
                 i.Item_Stock_Min,
                 i.Item_Stock_Max,
                 i.Item_Estado,
                 i.CategoriaItem_Id,
+                i.UnidadMedidaBase_Id,
                 c.CategoriaItem_Nombre,
-                c.CategoriaItem_Descripcion
+                c.CategoriaItem_Descripcion,
+                u.UnidadMedida_Nombre,
+                u.UnidadMedida_Prefijo
             FROM Items i
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id
             ORDER BY i.Item_Nombre ASC
         `);
         return items;
@@ -98,15 +101,18 @@ class ItemModel {
                 i.Item_Codigo_Barra,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                i.Item_Precio_Sugerido,
                 i.Item_Stock_Min,
                 i.Item_Stock_Max,
                 i.Item_Estado,
                 i.CategoriaItem_Id,
+                i.UnidadMedidaBase_Id,
                 c.CategoriaItem_Nombre,
-                c.CategoriaItem_Descripcion
+                c.CategoriaItem_Descripcion,
+                u.UnidadMedida_Nombre,
+                u.UnidadMedida_Prefijo
             FROM Items i
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id
             WHERE i.Item_Id = ?
         `, [id]);
         return items[0];
@@ -124,11 +130,11 @@ class ItemModel {
             Item_Codigo_Barra,
             Item_Nombre,
             Item_Costo_Unitario,
-            Item_Precio_Sugerido,
             Item_Stock_Min,
             Item_Stock_Max,
             Item_Estado,
-            CategoriaItem_Id
+            CategoriaItem_Id,
+            UnidadMedidaBase_Id
         } = itemData;
 
         // Verificar duplicados (excluyendo el item actual)
@@ -150,22 +156,22 @@ class ItemModel {
                 Item_Codigo_Barra = ?,
                 Item_Nombre = ?,
                 Item_Costo_Unitario = ?,
-                Item_Precio_Sugerido = ?,
                 Item_Stock_Min = ?,
                 Item_Stock_Max = ?,
                 Item_Estado = ?,
-                CategoriaItem_Id = ?
+                CategoriaItem_Id = ?,
+                UnidadMedidaBase_Id = ?
             WHERE Item_Id = ?
         `, [
             Item_Codigo_SKU || null,
             Item_Codigo_Barra || null,
             Item_Nombre,
             Item_Costo_Unitario,
-            Item_Precio_Sugerido || null,
             Item_Stock_Min || 0,
             Item_Stock_Max || null,
             Item_Estado !== undefined ? Item_Estado : true,
             CategoriaItem_Id,
+            UnidadMedidaBase_Id,
             id
         ]);
         
@@ -232,17 +238,20 @@ class ItemModel {
                 i.Item_Codigo_Barra,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                i.Item_Precio_Sugerido,
                 i.Item_Stock_Min,
                 i.Item_Stock_Max,
                 i.Item_Estado,
                 i.CategoriaItem_Id,
+                i.UnidadMedidaBase_Id,
                 c.CategoriaItem_Nombre,
-                c.CategoriaItem_Descripcion
+                c.CategoriaItem_Descripcion,
+                u.UnidadMedida_Nombre,
+                u.UnidadMedida_Prefijo
             FROM Items i
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id
         `;
-        let countQuery = 'SELECT COUNT(*) as total FROM Items i INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id';
+        let countQuery = 'SELECT COUNT(*) as total FROM Items i INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id';
         let params = [];
         let whereConditions = [];
 
@@ -299,15 +308,18 @@ class ItemModel {
                 i.Item_Codigo_Barra,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                i.Item_Precio_Sugerido,
                 i.Item_Stock_Min,
                 i.Item_Stock_Max,
                 i.Item_Estado,
                 i.CategoriaItem_Id,
+                i.UnidadMedidaBase_Id,
                 c.CategoriaItem_Nombre,
-                c.CategoriaItem_Descripcion
+                c.CategoriaItem_Descripcion,
+                u.UnidadMedida_Nombre,
+                u.UnidadMedida_Prefijo
             FROM Items i
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id
             WHERE i.CategoriaItem_Id = ?
             ORDER BY i.Item_Nombre ASC
         `, [categoriaId]);
@@ -328,15 +340,18 @@ class ItemModel {
                 i.Item_Codigo_Barra,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                i.Item_Precio_Sugerido,
                 i.Item_Stock_Min,
                 i.Item_Stock_Max,
                 i.Item_Estado,
                 i.CategoriaItem_Id,
+                i.UnidadMedidaBase_Id,
                 c.CategoriaItem_Nombre,
-                c.CategoriaItem_Descripcion
+                c.CategoriaItem_Descripcion,
+                u.UnidadMedida_Nombre,
+                u.UnidadMedida_Prefijo
             FROM Items i
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+            INNER JOIN UnidadesMedida u ON i.UnidadMedidaBase_Id = u.UnidadMedida_Id
             WHERE i.Item_Nombre LIKE ? 
                OR i.Item_Codigo_SKU LIKE ? 
                OR i.Item_Codigo_Barra LIKE ?

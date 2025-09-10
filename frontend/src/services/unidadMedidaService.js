@@ -16,7 +16,7 @@ const getAuthHeaders = () => {
 export const getUnidadesMedida = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/unidades-medida`, getAuthHeaders());
-    return response.data;
+    return response.data.data || [];
   } catch (error) {
     throw error.response ? error.response.data : error;
   }
