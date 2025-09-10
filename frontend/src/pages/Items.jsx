@@ -28,11 +28,11 @@ const Items = () => {
     Item_Codigo_Barra: '',
     Item_Nombre: '',
     Item_Costo_Unitario: '',
-    Item_Precio_Sugerido: '',
     Item_Stock_Min: '',
     Item_Stock_Max: '',
     Item_Estado: true,
-    CategoriaItem_Id: ''
+    CategoriaItem_Id: '',
+    UnidadMedidaBase_Id: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -97,9 +97,18 @@ const Items = () => {
       render: (item) => (
         <div>
           <div className="font-medium text-gray-900">{item.Item_Nombre}</div>
-          <div className="text-sm text-gray-500 flex items-center space-x-2">
-            <FiTag className="w-3 h-3" />
-            <span>{item.CategoriaItem_Nombre}</span>
+          <div className="text-sm text-gray-500 flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <FiTag className="w-3 h-3" />
+              <span>{item.CategoriaItem_Nombre}</span>
+            </div>
+            {item.UnidadMedida_Nombre && (
+              <div className="flex items-center space-x-1">
+                <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                  {item.UnidadMedida_Prefijo}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )
@@ -126,18 +135,18 @@ const Items = () => {
       )
     },
     {
-      field: 'precios',
-      header: 'Precios',
+      field: 'costo_unidad',
+      header: 'Costo & Unidad',
       render: (item) => (
         <div className="space-y-1">
           <div className="flex items-center space-x-1">
-            <span className="text-sm font-medium text-green-600">
+            <span className="text-sm font-medium text-primary">
               Q{parseFloat(item.Item_Costo_Unitario || 0).toFixed(2)}
             </span>
           </div>
-          {item.Item_Precio_Sugerido && (
+          {item.UnidadMedida_Nombre && (
             <div className="text-xs text-gray-500">
-              Sugerido: Q{parseFloat(item.Item_Precio_Sugerido).toFixed(2)}
+              por {item.UnidadMedida_Nombre}
             </div>
           )}
         </div>
@@ -239,11 +248,11 @@ const Items = () => {
       Item_Codigo_Barra: '',
       Item_Nombre: '',
       Item_Costo_Unitario: '',
-      Item_Precio_Sugerido: '',
       Item_Stock_Min: '',
       Item_Stock_Max: '',
       Item_Estado: true,
-      CategoriaItem_Id: ''
+      CategoriaItem_Id: '',
+      UnidadMedidaBase_Id: ''
     });
   };
 
@@ -258,11 +267,11 @@ const Items = () => {
           Item_Codigo_Barra: data.Item_Codigo_Barra || null,
           Item_Nombre: data.Item_Nombre,
           Item_Costo_Unitario: parseFloat(data.Item_Costo_Unitario),
-          Item_Precio_Sugerido: data.Item_Precio_Sugerido ? parseFloat(data.Item_Precio_Sugerido) : null,
           Item_Stock_Min: data.Item_Stock_Min ? parseInt(data.Item_Stock_Min) : 0,
           Item_Stock_Max: data.Item_Stock_Max ? parseInt(data.Item_Stock_Max) : null,
           Item_Estado: Boolean(data.Item_Estado),
-          CategoriaItem_Id: parseInt(data.CategoriaItem_Id)
+          CategoriaItem_Id: parseInt(data.CategoriaItem_Id),
+          UnidadMedidaBase_Id: parseInt(data.UnidadMedidaBase_Id)
         });
         toast.success('Item actualizado exitosamente');
       } else {
@@ -271,11 +280,11 @@ const Items = () => {
           Item_Codigo_Barra: data.Item_Codigo_Barra || null,
           Item_Nombre: data.Item_Nombre,
           Item_Costo_Unitario: parseFloat(data.Item_Costo_Unitario),
-          Item_Precio_Sugerido: data.Item_Precio_Sugerido ? parseFloat(data.Item_Precio_Sugerido) : null,
           Item_Stock_Min: data.Item_Stock_Min ? parseInt(data.Item_Stock_Min) : 0,
           Item_Stock_Max: data.Item_Stock_Max ? parseInt(data.Item_Stock_Max) : null,
           Item_Estado: Boolean(data.Item_Estado),
-          CategoriaItem_Id: parseInt(data.CategoriaItem_Id)
+          CategoriaItem_Id: parseInt(data.CategoriaItem_Id),
+          UnidadMedidaBase_Id: parseInt(data.UnidadMedidaBase_Id)
         });
         toast.success('Item creado exitosamente');
       }

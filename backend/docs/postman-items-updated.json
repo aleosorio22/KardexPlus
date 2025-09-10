@@ -1,0 +1,195 @@
+{
+  "info": {
+    "name": "KardexPlus - Items API (Updated)",
+    "description": "Endpoints para testing de Items con UnidadMedidaBase_Id",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Usuario_Correo\": \"admin@kardexplus.com\",\n  \"Usuario_Contrasena\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Get All Units",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/unidades-medida",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "unidades-medida"]
+        }
+      }
+    },
+    {
+      "name": "Create Item (Updated Structure)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Item_Codigo_SKU\": \"SKU001\",\n  \"Item_Codigo_Barra\": \"123456789\",\n  \"Item_Nombre\": \"Producto de Prueba Actualizado\",\n  \"Item_Costo_Unitario\": 25.50,\n  \"Item_Stock_Min\": 10,\n  \"Item_Stock_Max\": 100,\n  \"Item_Estado\": true,\n  \"CategoriaItem_Id\": 1,\n  \"UnidadMedidaBase_Id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items"]
+        }
+      }
+    },
+    {
+      "name": "Get All Items (Updated Response)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items"]
+        }
+      }
+    },
+    {
+      "name": "Get Item by ID (Updated Response)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/items/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items", "{{itemId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update Item (Updated Structure)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Item_Codigo_SKU\": \"SKU001-UPD\",\n  \"Item_Codigo_Barra\": \"123456789-UPD\",\n  \"Item_Nombre\": \"Producto Actualizado Modificado\",\n  \"Item_Costo_Unitario\": 30.75,\n  \"Item_Stock_Min\": 15,\n  \"Item_Stock_Max\": 150,\n  \"Item_Estado\": true,\n  \"CategoriaItem_Id\": 1,\n  \"UnidadMedidaBase_Id\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/items/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items", "{{itemId}}"]
+        }
+      }
+    },
+    {
+      "name": "Test Validation - Missing UnidadMedidaBase_Id",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Item_Codigo_SKU\": \"SKU002\",\n  \"Item_Codigo_Barra\": \"987654321\",\n  \"Item_Nombre\": \"Producto Sin Unidad Base\",\n  \"Item_Costo_Unitario\": 15.00,\n  \"Item_Stock_Min\": 5,\n  \"Item_Stock_Max\": 50,\n  \"Item_Estado\": true,\n  \"CategoriaItem_Id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items"]
+        }
+      }
+    },
+    {
+      "name": "Test Validation - Invalid UnidadMedidaBase_Id",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Item_Codigo_SKU\": \"SKU003\",\n  \"Item_Codigo_Barra\": \"555666777\",\n  \"Item_Nombre\": \"Producto Con Unidad Invalida\",\n  \"Item_Costo_Unitario\": 20.00,\n  \"Item_Stock_Min\": 8,\n  \"Item_Stock_Max\": 80,\n  \"Item_Estado\": true,\n  \"CategoriaItem_Id\": 1,\n  \"UnidadMedidaBase_Id\": \"invalid\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/items",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "items"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    }
+  ]
+}

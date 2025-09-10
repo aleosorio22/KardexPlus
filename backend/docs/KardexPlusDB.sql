@@ -71,16 +71,15 @@ CREATE TABLE `Items` (
   `Item_Codigo_Barra` varchar(20),
   `Item_Nombre` varchar(50) UNIQUE NOT NULL,
   `Item_Costo_Unitario` decimal(10,2) NOT NULL,
-  `Item_Precio_Sugerido` decimal(10,2),
   `Item_Stock_Min` int DEFAULT 0,
   `Item_Stock_Max` int,
   `Item_Estado` boolean DEFAULT true,
   `Item_Fecha_Creacion` datetime DEFAULT CURRENT_TIMESTAMP,
   `Item_Fecha_Actualizacion` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `CategoriaItem_Id` int NOT NULL,
+  `UnidadMedidaBase_Id` int NOT NULL,
   CONSTRAINT chk_item_nombre_no_vacio CHECK (TRIM(`Item_Nombre`) <> ''),
   CONSTRAINT chk_costo_positivo CHECK (`Item_Costo_Unitario` >= 0),
-  CONSTRAINT chk_precio_positivo CHECK (`Item_Precio_Sugerido` IS NULL OR `Item_Precio_Sugerido` >= 0),
   CONSTRAINT chk_stock_min_valido CHECK (`Item_Stock_Min` >= 0),
   CONSTRAINT chk_stock_max_valido CHECK (`Item_Stock_Max` IS NULL OR `Item_Stock_Max` >= `Item_Stock_Min`)
 );
@@ -287,6 +286,8 @@ CREATE TABLE `Auditoria` (
 ALTER TABLE `Usuarios` ADD FOREIGN KEY (`Rol_Id`) REFERENCES `Roles` (`Rol_Id`) ON DELETE RESTRICT;
 
 ALTER TABLE `Items` ADD FOREIGN KEY (`CategoriaItem_Id`) REFERENCES `CategoriasItems` (`CategoriaItem_Id`) ON DELETE RESTRICT;
+
+ALTER TABLE `Items` ADD FOREIGN KEY (`UnidadMedidaBase_Id`) REFERENCES `UnidadesMedida` (`UnidadMedida_Id`) ON DELETE RESTRICT;
 
 ALTER TABLE `Presentaciones` ADD FOREIGN KEY (`UnidadMedida_Id`) REFERENCES `UnidadesMedida` (`UnidadMedida_Id`) ON DELETE RESTRICT;
 

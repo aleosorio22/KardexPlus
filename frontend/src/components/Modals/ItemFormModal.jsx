@@ -1,6 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useEffect } from 'react';
-import { FiX, FiTag, FiDollarSign, FiPackage, FiBarChart } from 'react-icons/fi';
+import { Fragment, useEffect, useState } from 'react';
+import { FiX, FiTag, FiDollarSign, FiPackage, FiBarChart, FiBox } from 'react-icons/fi';
+import { getUnidadesMedida } from '../../services/unidadMedidaService';
 
 export default function ItemFormModal({ 
   isOpen, 
@@ -13,6 +14,24 @@ export default function ItemFormModal({
   isLoading = false,
   categories = []
 }) {
+  const [unidadesMedida, setUnidadesMedida] = useState([]);
+
+  // Cargar unidades de medida
+  useEffect(() => {
+    const fetchUnidadesMedida = async () => {
+      try {
+        const unidades = await getUnidadesMedida();
+        setUnidadesMedida(Array.isArray(unidades) ? unidades : []);
+      } catch (error) {
+        console.error('Error al cargar unidades de medida:', error);
+        setUnidadesMedida([]);
+      }
+    };
+
+    if (isOpen) {
+      fetchUnidadesMedida();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isEditing && selectedItem) {
@@ -21,11 +40,11 @@ export default function ItemFormModal({
         Item_Codigo_Barra: selectedItem.Item_Codigo_Barra || '',
         Item_Nombre: selectedItem.Item_Nombre || '',
         Item_Costo_Unitario: selectedItem.Item_Costo_Unitario || '',
-        Item_Precio_Sugerido: selectedItem.Item_Precio_Sugerido || '',
         Item_Stock_Min: selectedItem.Item_Stock_Min || '',
         Item_Stock_Max: selectedItem.Item_Stock_Max || '',
         Item_Estado: selectedItem.Item_Estado !== undefined ? selectedItem.Item_Estado : true,
-        CategoriaItem_Id: selectedItem.CategoriaItem_Id || ''
+        CategoriaItem_Id: selectedItem.CategoriaItem_Id || '',
+        UnidadMedidaBase_Id: selectedItem.UnidadMedidaBase_Id || ''
       });
     } else if (!isEditing) {
       // Limpiar formulario para nuevo item
@@ -34,11 +53,11 @@ export default function ItemFormModal({
         Item_Codigo_Barra: '',
         Item_Nombre: '',
         Item_Costo_Unitario: '',
-        Item_Precio_Sugerido: '',
         Item_Stock_Min: '',
         Item_Stock_Max: '',
         Item_Estado: true,
-        CategoriaItem_Id: ''
+        CategoriaItem_Id: '',
+        UnidadMedidaBase_Id: ''
       });
     }
   }, [isEditing, selectedItem, setFormData, isOpen]);
@@ -172,6 +191,29 @@ export default function ItemFormModal({
                           <FiTag className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
                         </div>
                       </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Unidad de Medida *
+                        </label>
+                        <div className="relative">
+                          <select
+                            required
+                            value={formData.UnidadMedidaBase_Id || ''}
+                            onChange={(e) => handleInputChange('UnidadMedidaBase_Id', e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors appearance-none"
+                            disabled={isLoading}
+                          >
+                            <option value="">Selecciona una unidad de medida</option>
+                            {unidadesMedida.map((unidad) => (
+                              <option key={unidad.UnidadMedida_Id} value={unidad.UnidadMedida_Id}>
+                                {unidad.UnidadMedida_Nombre} ({unidad.UnidadMedida_Abreviacion})
+                              </option>
+                            ))}
+                          </select>
+                          <FiBox className="absolute right-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -182,39 +224,21 @@ export default function ItemFormModal({
                       <span>Información de Precios</span>
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Costo Unitario * (Q)
-                        </label>
-                        <input
-                          type="number"
-                          required
-                          min="0"
-                          step="0.01"
-                          value={formData.Item_Costo_Unitario || ''}
-                          onChange={(e) => handleInputChange('Item_Costo_Unitario', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
-                          placeholder="0.00"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Precio Sugerido (Q)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={formData.Item_Precio_Sugerido || ''}
-                          onChange={(e) => handleInputChange('Item_Precio_Sugerido', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
-                          placeholder="0.00"
-                          disabled={isLoading}
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Costo Unitario * (Q)
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        step="0.01"
+                        value={formData.Item_Costo_Unitario || ''}
+                        onChange={(e) => handleInputChange('Item_Costo_Unitario', e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                        placeholder="0.00"
+                        disabled={isLoading}
+                      />
                     </div>
                   </div>
 
@@ -281,10 +305,19 @@ export default function ItemFormModal({
                     </label>
                   </div>
 
-                  {categories.length === 0 && (
+                  {(categories.length === 0 || unidadesMedida.length === 0) && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                       <p className="text-sm text-amber-700">
-                        <strong>Nota:</strong> No hay categorías disponibles. Crea al menos una categoría antes de agregar items.
+                        <strong>Nota:</strong> 
+                        {categories.length === 0 && unidadesMedida.length === 0 && 
+                          ' No hay categorías ni unidades de medida disponibles.'
+                        }
+                        {categories.length === 0 && unidadesMedida.length > 0 && 
+                          ' No hay categorías disponibles. Crea al menos una categoría antes de agregar items.'
+                        }
+                        {categories.length > 0 && unidadesMedida.length === 0 && 
+                          ' No hay unidades de medida disponibles. Crea al menos una unidad de medida antes de agregar items.'
+                        }
                       </p>
                     </div>
                   )}
@@ -301,11 +334,11 @@ export default function ItemFormModal({
                     <button
                       type="submit"
                       className={`px-4 py-2 rounded-lg text-primary-foreground transition-colors ${
-                        isLoading || categories.length === 0
+                        isLoading || categories.length === 0 || unidadesMedida.length === 0
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-primary hover:bg-primary/90'
                       }`}
-                      disabled={isLoading || categories.length === 0}
+                      disabled={isLoading || categories.length === 0 || unidadesMedida.length === 0}
                     >
                       {isLoading ? (
                         <div className="flex items-center space-x-2">
