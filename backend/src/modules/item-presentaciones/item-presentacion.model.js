@@ -9,16 +9,16 @@ class ItemPresentacionModel {
     static async create(itemPresentacionData) {
         const {
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU,
             Item_Presentaciones_CodigoBarras,
-            Item_Presentaciones_Costo,
-            Item_Presentaciones_Precio
+            Item_Presentaciones_Costo
         } = itemPresentacionData;
 
         // Verificar duplicados
-        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Id)) {
-            throw new Error('Ya existe una presentación para este item');
+        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Nombre)) {
+            throw new Error('Ya existe una presentación con este nombre para este item');
         }
 
         if (Item_Presentacion_CodigoSKU && await this.existsBySKU(Item_Presentacion_CodigoSKU)) {
@@ -32,19 +32,19 @@ class ItemPresentacionModel {
         const [result] = await db.execute(`
             INSERT INTO Items_Presentaciones (
                 Item_Id,
-                Presentacion_Id,
+                Presentacion_Nombre,
+                Cantidad_Base,
                 Item_Presentacion_CodigoSKU,
                 Item_Presentaciones_CodigoBarras,
-                Item_Presentaciones_Costo,
-                Item_Presentaciones_Precio
+                Item_Presentaciones_Costo
             ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU || null,
             Item_Presentaciones_CodigoBarras || null,
-            Item_Presentaciones_Costo || null,
-            Item_Presentaciones_Precio || null
+            Item_Presentaciones_Costo || null
         ]);
         
         return result.insertId;
@@ -59,24 +59,21 @@ class ItemPresentacionModel {
             SELECT 
                 ip.Item_Presentaciones_Id,
                 ip.Item_Id,
-                ip.Presentacion_Id,
+                ip.Presentacion_Nombre,
+                ip.Cantidad_Base,
                 ip.Item_Presentacion_CodigoSKU,
                 ip.Item_Presentaciones_CodigoBarras,
                 ip.Item_Presentaciones_Costo,
-                ip.Item_Presentaciones_Precio,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
                 c.CategoriaItem_Nombre,
-                p.Presentacion_Nombre,
-                p.Presentacion_Cantidad,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
             FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
-            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
-            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
-            ORDER BY i.Item_Nombre ASC, p.Presentacion_Nombre ASC
+            INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
+            ORDER BY i.Item_Nombre ASC, ip.Presentacion_Nombre ASC
         `);
         return presentaciones;
     }
@@ -91,24 +88,21 @@ class ItemPresentacionModel {
             SELECT 
                 ip.Item_Presentaciones_Id,
                 ip.Item_Id,
-                ip.Presentacion_Id,
+                ip.Presentacion_Nombre,
+                ip.Cantidad_Base,
                 ip.Item_Presentacion_CodigoSKU,
                 ip.Item_Presentaciones_CodigoBarras,
                 ip.Item_Presentaciones_Costo,
-                ip.Item_Presentaciones_Precio,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
                 i.Item_Estado,
                 c.CategoriaItem_Nombre,
-                p.Presentacion_Nombre,
-                p.Presentacion_Cantidad,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
             FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
-            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
-            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
             WHERE ip.Item_Presentaciones_Id = ?
         `, [id]);
         return presentaciones[0];
@@ -124,23 +118,20 @@ class ItemPresentacionModel {
             SELECT 
                 ip.Item_Presentaciones_Id,
                 ip.Item_Id,
-                ip.Presentacion_Id,
+                ip.Presentacion_Nombre,
+                ip.Cantidad_Base,
                 ip.Item_Presentacion_CodigoSKU,
                 ip.Item_Presentaciones_CodigoBarras,
                 ip.Item_Presentaciones_Costo,
-                ip.Item_Presentaciones_Precio,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
-                p.Presentacion_Nombre,
-                p.Presentacion_Cantidad,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
             FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
-            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
-            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
             WHERE ip.Item_Id = ?
-            ORDER BY p.Presentacion_Cantidad ASC
+            ORDER BY ip.Cantidad_Base ASC
         `, [itemId]);
         return presentaciones;
     }
@@ -154,16 +145,16 @@ class ItemPresentacionModel {
     static async update(id, itemPresentacionData) {
         const {
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU,
             Item_Presentaciones_CodigoBarras,
-            Item_Presentaciones_Costo,
-            Item_Presentaciones_Precio
+            Item_Presentaciones_Costo
         } = itemPresentacionData;
 
         // Verificar duplicados (excluyendo la presentación actual)
-        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Id, id)) {
-            throw new Error('Ya existe una presentación para este item');
+        if (await this.existsByItemAndPresentacion(Item_Id, Presentacion_Nombre, id)) {
+            throw new Error('Ya existe una presentación con este nombre para este item');
         }
 
         if (Item_Presentacion_CodigoSKU && await this.existsBySKU(Item_Presentacion_CodigoSKU, id)) {
@@ -177,19 +168,19 @@ class ItemPresentacionModel {
         const [result] = await db.execute(`
             UPDATE Items_Presentaciones SET
                 Item_Id = ?,
-                Presentacion_Id = ?,
+                Presentacion_Nombre = ?,
+                Cantidad_Base = ?,
                 Item_Presentacion_CodigoSKU = ?,
                 Item_Presentaciones_CodigoBarras = ?,
-                Item_Presentaciones_Costo = ?,
-                Item_Presentaciones_Precio = ?
+                Item_Presentaciones_Costo = ?
             WHERE Item_Presentaciones_Id = ?
         `, [
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU || null,
             Item_Presentaciones_CodigoBarras || null,
             Item_Presentaciones_Costo || null,
-            Item_Presentaciones_Precio || null,
             id
         ]);
         
@@ -216,39 +207,35 @@ class ItemPresentacionModel {
      * @param {number} limit - Número máximo de registros a retornar
      * @param {string} search - Término de búsqueda (opcional)
      * @param {string} itemId - ID del item para filtrar (opcional)
-     * @param {string} presentacionId - ID de presentación para filtrar (opcional)
      * @returns {Promise<Object>} - Objeto con data y total
      */
-    static async findWithPagination(offset = 0, limit = 10, search = '', itemId = '', presentacionId = '') {
+    static async findWithPagination(offset = 0, limit = 10, search = '', itemId = '') {
         let query = `
             SELECT 
                 ip.Item_Presentaciones_Id,
                 ip.Item_Id,
-                ip.Presentacion_Id,
+                ip.Presentacion_Nombre,
+                ip.Cantidad_Base,
                 ip.Item_Presentacion_CodigoSKU,
                 ip.Item_Presentaciones_CodigoBarras,
                 ip.Item_Presentaciones_Costo,
-                ip.Item_Presentaciones_Precio,
                 i.Item_Nombre,
                 i.Item_Costo_Unitario,
                 c.CategoriaItem_Nombre,
-                p.Presentacion_Nombre,
-                p.Presentacion_Cantidad,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
             FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
-            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
-            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
         `;
-        let countQuery = 'SELECT COUNT(*) as total FROM Items_Presentaciones ip INNER JOIN Items i ON ip.Item_Id = i.Item_Id INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id';
+        let countQuery = 'SELECT COUNT(*) as total FROM Items_Presentaciones ip INNER JOIN Items i ON ip.Item_Id = i.Item_Id';
         let params = [];
         let whereConditions = [];
 
         if (search && search.trim() !== '') {
             const searchPattern = `%${search.trim()}%`;
-            whereConditions.push('(i.Item_Nombre LIKE ? OR p.Presentacion_Nombre LIKE ? OR ip.Item_Presentacion_CodigoSKU LIKE ? OR ip.Item_Presentaciones_CodigoBarras LIKE ?)');
+            whereConditions.push('(i.Item_Nombre LIKE ? OR ip.Presentacion_Nombre LIKE ? OR ip.Item_Presentacion_CodigoSKU LIKE ? OR ip.Item_Presentaciones_CodigoBarras LIKE ?)');
             params.push(searchPattern, searchPattern, searchPattern, searchPattern);
         }
 
@@ -257,18 +244,13 @@ class ItemPresentacionModel {
             params.push(parseInt(itemId));
         }
 
-        if (presentacionId && presentacionId.trim() !== '') {
-            whereConditions.push('ip.Presentacion_Id = ?');
-            params.push(parseInt(presentacionId));
-        }
-
         if (whereConditions.length > 0) {
             const whereClause = ' WHERE ' + whereConditions.join(' AND ');
             query += whereClause;
             countQuery += whereClause;
         }
 
-        query += ' ORDER BY i.Item_Nombre ASC, p.Presentacion_Cantidad ASC LIMIT ? OFFSET ?';
+        query += ' ORDER BY i.Item_Nombre ASC, ip.Cantidad_Base ASC LIMIT ? OFFSET ?';
         
         const queryParams = [...params, parseInt(limit), parseInt(offset)];
         const countParams = [...params];
@@ -305,15 +287,15 @@ class ItemPresentacionModel {
     }
 
     /**
-     * Verifica si existe una presentación para un item y presentación específicos
+     * Verifica si existe una presentación para un item y nombre de presentación específicos
      * @param {number} itemId - ID del item
-     * @param {number} presentacionId - ID de la presentación
+     * @param {string} presentacionNombre - Nombre de la presentación
      * @param {number} excludeId - ID a excluir de la búsqueda (opcional)
      * @returns {Promise<boolean>} - true si existe, false si no
      */
-    static async existsByItemAndPresentacion(itemId, presentacionId, excludeId = null) {
-        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Id = ? AND Presentacion_Id = ?';
-        let params = [itemId, presentacionId];
+    static async existsByItemAndPresentacion(itemId, presentacionNombre, excludeId = null) {
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Id = ? AND Presentacion_Nombre = ?';
+        let params = [itemId, presentacionNombre];
         
         if (excludeId) {
             query += ' AND Item_Presentaciones_Id != ?';
@@ -373,24 +355,21 @@ class ItemPresentacionModel {
             SELECT 
                 ip.Item_Presentaciones_Id,
                 ip.Item_Id,
-                ip.Presentacion_Id,
+                ip.Presentacion_Nombre,
+                ip.Cantidad_Base,
                 ip.Item_Presentacion_CodigoSKU,
                 ip.Item_Presentaciones_CodigoBarras,
                 ip.Item_Presentaciones_Costo,
-                ip.Item_Presentaciones_Precio,
                 i.Item_Nombre,
-                p.Presentacion_Nombre,
-                p.Presentacion_Cantidad,
                 um.UnidadMedida_Prefijo
             FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
-            INNER JOIN Presentaciones p ON ip.Presentacion_Id = p.Presentacion_Id
-            INNER JOIN UnidadesMedida um ON p.UnidadMedida_Id = um.UnidadMedida_Id
+            INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
             WHERE i.Item_Nombre LIKE ? 
-               OR p.Presentacion_Nombre LIKE ?
+               OR ip.Presentacion_Nombre LIKE ?
                OR ip.Item_Presentacion_CodigoSKU LIKE ?
                OR ip.Item_Presentaciones_CodigoBarras LIKE ?
-            ORDER BY i.Item_Nombre ASC, p.Presentacion_Cantidad ASC
+            ORDER BY i.Item_Nombre ASC, ip.Cantidad_Base ASC
             LIMIT 50
         `, [searchPattern, searchPattern, searchPattern, searchPattern]);
         return presentaciones;
@@ -405,9 +384,8 @@ class ItemPresentacionModel {
             SELECT 
                 COUNT(*) as totalPresentaciones,
                 COUNT(DISTINCT ip.Item_Id) as itemsConPresentaciones,
-                COUNT(DISTINCT ip.Presentacion_Id) as presentacionesUsadas,
                 AVG(ip.Item_Presentaciones_Costo) as costoPromedio,
-                AVG(ip.Item_Presentaciones_Precio) as precioPromedio
+                AVG(ip.Cantidad_Base) as cantidadBasePromedio
             FROM Items_Presentaciones ip
         `);
         return stats[0];

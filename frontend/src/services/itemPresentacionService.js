@@ -13,8 +13,18 @@ const getAuthHeaders = () => {
 };
 
 const itemPresentacionService = {
-  // Obtener todas las presentaciones de items con paginación y filtros
-  getAllItemPresentaciones: async (params = {}) => {
+  // Obtener todas las presentaciones de items
+  getAllItemPresentaciones: async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/item-presentaciones`, getAuthHeaders());
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : error;
+    }
+  },
+
+  // Obtener presentaciones de items con paginación y filtros
+  getItemPresentacionesWithPagination: async (params = {}) => {
     try {
       const queryParams = new URLSearchParams();
       
@@ -22,9 +32,9 @@ const itemPresentacionService = {
       if (params.page) queryParams.append('page', params.page);
       if (params.limit) queryParams.append('limit', params.limit);
       if (params.search) queryParams.append('search', params.search);
-      if (params.item_id) queryParams.append('item_id', params.item_id);
+      if (params.itemId) queryParams.append('itemId', params.itemId);
 
-      const url = `${API_BASE_URL}/item-presentaciones${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${API_BASE_URL}/item-presentaciones/paginated${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await axios.get(url, getAuthHeaders());
       return response.data;
     } catch (error) {
@@ -93,16 +103,6 @@ const itemPresentacionService = {
     }
   },
 
-  // Toggle estado de la presentación de item
-  toggleItemPresentacionStatus: async (id) => {
-    try {
-      const response = await axios.patch(`${API_BASE_URL}/item-presentaciones/${id}/toggle`, {}, getAuthHeaders());
-      return response.data;
-    } catch (error) {
-      throw error.response ? error.response.data : error;
-    }
-  },
-
   // Obtener estadísticas de presentaciones de items
   getItemPresentacionStats: async () => {
     try {
@@ -134,40 +134,6 @@ const itemPresentacionService = {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/item-presentaciones/${id}/exists`,
-        getAuthHeaders()
-      );
-      return response.data;
-    } catch (error) {
-      throw error.response ? error.response.data : error;
-    }
-  },
-
-  // Verificar duplicados de SKU
-  checkSKUExists: async (sku, excludeId = null) => {
-    try {
-      const params = new URLSearchParams();
-      params.append('sku', sku);
-      if (excludeId) params.append('exclude_id', excludeId);
-
-      const response = await axios.get(
-        `${API_BASE_URL}/item-presentaciones/check-sku?${params.toString()}`,
-        getAuthHeaders()
-      );
-      return response.data;
-    } catch (error) {
-      throw error.response ? error.response.data : error;
-    }
-  },
-
-  // Verificar duplicados de código de barras
-  checkCodigoBarrasExists: async (codigoBarras, excludeId = null) => {
-    try {
-      const params = new URLSearchParams();
-      params.append('codigo_barras', codigoBarras);
-      if (excludeId) params.append('exclude_id', excludeId);
-
-      const response = await axios.get(
-        `${API_BASE_URL}/item-presentaciones/check-codigo-barras?${params.toString()}`,
         getAuthHeaders()
       );
       return response.data;

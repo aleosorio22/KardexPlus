@@ -34,10 +34,9 @@ exports.getItemPresentacionesWithPagination = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const search = req.query.search || '';
         const itemId = req.query.itemId || '';
-        const presentacionId = req.query.presentacionId || '';
         const offset = (page - 1) * limit;
 
-        const result = await ItemPresentacionModel.findWithPagination(offset, limit, search, itemId, presentacionId);
+        const result = await ItemPresentacionModel.findWithPagination(offset, limit, search, itemId);
         
         res.json({
             success: true,
@@ -141,11 +140,11 @@ exports.createItemPresentacion = async (req, res) => {
     try {
         const {
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU,
             Item_Presentaciones_CodigoBarras,
-            Item_Presentaciones_Costo,
-            Item_Presentaciones_Precio
+            Item_Presentaciones_Costo
         } = req.body;
 
         // Validaciones
@@ -156,14 +155,28 @@ exports.createItemPresentacion = async (req, res) => {
             });
         }
 
-        if (!Presentacion_Id || isNaN(Presentacion_Id)) {
+        if (!Presentacion_Nombre || Presentacion_Nombre.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'ID de presentación es requerido y debe ser un número válido'
+                message: 'El nombre de la presentación es requerido'
             });
         }
 
-        // Validar longitud de códigos si se proporcionan
+        if (!Cantidad_Base || isNaN(Cantidad_Base) || parseFloat(Cantidad_Base) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cantidad base es requerida y debe ser mayor a 0'
+            });
+        }
+
+        // Validar longitud de campos
+        if (Presentacion_Nombre.length > 30) {
+            return res.status(400).json({
+                success: false,
+                message: 'El nombre de la presentación no puede exceder 30 caracteres'
+            });
+        }
+
         if (Item_Presentacion_CodigoSKU && Item_Presentacion_CodigoSKU.length > 20) {
             return res.status(400).json({
                 success: false,
@@ -178,7 +191,7 @@ exports.createItemPresentacion = async (req, res) => {
             });
         }
 
-        // Validar costos y precios si se proporcionan
+        // Validar costo si se proporciona
         if (Item_Presentaciones_Costo !== undefined && Item_Presentaciones_Costo !== null && parseFloat(Item_Presentaciones_Costo) < 0) {
             return res.status(400).json({
                 success: false,
@@ -186,20 +199,13 @@ exports.createItemPresentacion = async (req, res) => {
             });
         }
 
-        if (Item_Presentaciones_Precio !== undefined && Item_Presentaciones_Precio !== null && parseFloat(Item_Presentaciones_Precio) < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'El precio debe ser mayor o igual a 0'
-            });
-        }
-
         const presentacionData = {
             Item_Id: parseInt(Item_Id),
-            Presentacion_Id: parseInt(Presentacion_Id),
+            Presentacion_Nombre: Presentacion_Nombre.trim(),
+            Cantidad_Base: parseFloat(Cantidad_Base),
             Item_Presentacion_CodigoSKU: Item_Presentacion_CodigoSKU ? Item_Presentacion_CodigoSKU.trim() : null,
             Item_Presentaciones_CodigoBarras: Item_Presentaciones_CodigoBarras ? Item_Presentaciones_CodigoBarras.trim() : null,
-            Item_Presentaciones_Costo: Item_Presentaciones_Costo ? parseFloat(Item_Presentaciones_Costo) : null,
-            Item_Presentaciones_Precio: Item_Presentaciones_Precio ? parseFloat(Item_Presentaciones_Precio) : null
+            Item_Presentaciones_Costo: Item_Presentaciones_Costo ? parseFloat(Item_Presentaciones_Costo) : null
         };
 
         const presentacionId = await ItemPresentacionModel.create(presentacionData);
@@ -241,11 +247,11 @@ exports.updateItemPresentacion = async (req, res) => {
         const { id } = req.params;
         const {
             Item_Id,
-            Presentacion_Id,
+            Presentacion_Nombre,
+            Cantidad_Base,
             Item_Presentacion_CodigoSKU,
             Item_Presentaciones_CodigoBarras,
-            Item_Presentaciones_Costo,
-            Item_Presentaciones_Precio
+            Item_Presentaciones_Costo
         } = req.body;
 
         // Validar que el ID sea un número
@@ -273,14 +279,28 @@ exports.updateItemPresentacion = async (req, res) => {
             });
         }
 
-        if (!Presentacion_Id || isNaN(Presentacion_Id)) {
+        if (!Presentacion_Nombre || Presentacion_Nombre.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'ID de presentación es requerido y debe ser un número válido'
+                message: 'El nombre de la presentación es requerido'
             });
         }
 
-        // Validar longitud de códigos si se proporcionan
+        if (!Cantidad_Base || isNaN(Cantidad_Base) || parseFloat(Cantidad_Base) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cantidad base es requerida y debe ser mayor a 0'
+            });
+        }
+
+        // Validar longitud de campos
+        if (Presentacion_Nombre.length > 30) {
+            return res.status(400).json({
+                success: false,
+                message: 'El nombre de la presentación no puede exceder 30 caracteres'
+            });
+        }
+
         if (Item_Presentacion_CodigoSKU && Item_Presentacion_CodigoSKU.length > 20) {
             return res.status(400).json({
                 success: false,
@@ -295,7 +315,7 @@ exports.updateItemPresentacion = async (req, res) => {
             });
         }
 
-        // Validar costos y precios si se proporcionan
+        // Validar costo si se proporciona
         if (Item_Presentaciones_Costo !== undefined && Item_Presentaciones_Costo !== null && parseFloat(Item_Presentaciones_Costo) < 0) {
             return res.status(400).json({
                 success: false,
@@ -303,20 +323,13 @@ exports.updateItemPresentacion = async (req, res) => {
             });
         }
 
-        if (Item_Presentaciones_Precio !== undefined && Item_Presentaciones_Precio !== null && parseFloat(Item_Presentaciones_Precio) < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'El precio debe ser mayor o igual a 0'
-            });
-        }
-
         const presentacionData = {
             Item_Id: parseInt(Item_Id),
-            Presentacion_Id: parseInt(Presentacion_Id),
+            Presentacion_Nombre: Presentacion_Nombre.trim(),
+            Cantidad_Base: parseFloat(Cantidad_Base),
             Item_Presentacion_CodigoSKU: Item_Presentacion_CodigoSKU ? Item_Presentacion_CodigoSKU.trim() : null,
             Item_Presentaciones_CodigoBarras: Item_Presentaciones_CodigoBarras ? Item_Presentaciones_CodigoBarras.trim() : null,
-            Item_Presentaciones_Costo: Item_Presentaciones_Costo ? parseFloat(Item_Presentaciones_Costo) : null,
-            Item_Presentaciones_Precio: Item_Presentaciones_Precio ? parseFloat(Item_Presentaciones_Precio) : null
+            Item_Presentaciones_Costo: Item_Presentaciones_Costo ? parseFloat(Item_Presentaciones_Costo) : null
         };
 
         const updated = await ItemPresentacionModel.update(parseInt(id), presentacionData);

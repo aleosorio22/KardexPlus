@@ -36,11 +36,11 @@ const ItemDetails = () => {
   // Estados para el modal de presentaciones
   const [isPresentacionModalOpen, setIsPresentacionModalOpen] = useState(false);
   const [presentacionFormData, setPresentacionFormData] = useState({
-    Presentacion_Id: '',
+    Presentacion_Nombre: '',
+    Cantidad_Base: '',
     Codigo_SKU: '',
     Codigo_Barras: '',
-    Factor_Conversion: '',
-    Precio_Venta: ''
+    Costo: ''
   });
   const [editingPresentacion, setEditingPresentacion] = useState(null);
   const [isPresentacionSubmitting, setIsPresentacionSubmitting] = useState(false);
@@ -73,16 +73,11 @@ const ItemDetails = () => {
     }
   };
 
-  // Cargar presentaciones disponibles
+  // Cargar presentaciones disponibles - Ya no necesario
   const loadPresentaciones = async () => {
-    try {
-      const response = await presentacionService.getAllPresentaciones();
-      const presentacionesData = response.data || response.presentaciones || response || [];
-      setPresentaciones(Array.isArray(presentacionesData) ? presentacionesData : []);
-    } catch (error) {
-      console.error('Error loading presentaciones:', error);
-      setPresentaciones([]);
-    }
+    // Ya no necesitamos cargar presentaciones reutilizables
+    // porque ahora cada item tiene sus propias presentaciones
+    setPresentaciones([]);
   };
 
   // Cargar presentaciones del item
@@ -170,11 +165,11 @@ const ItemDetails = () => {
   // Abrir modal para agregar presentación
   const handleAddPresentacion = () => {
     setPresentacionFormData({
-      Presentacion_Id: '',
+      Presentacion_Nombre: '',
+      Cantidad_Base: '',
       Codigo_SKU: '',
       Codigo_Barras: '',
-      Factor_Conversion: '',
-      Precio_Venta: ''
+      Costo: ''
     });
     setEditingPresentacion(null);
     setIsPresentacionModalOpen(true);
@@ -183,11 +178,11 @@ const ItemDetails = () => {
   // Abrir modal para editar presentación
   const handleEditPresentacion = (presentacion) => {
     setPresentacionFormData({
-      Presentacion_Id: presentacion.Presentacion_Id || '',
+      Presentacion_Nombre: presentacion.Presentacion_Nombre || '',
+      Cantidad_Base: presentacion.Cantidad_Base || '',
       Codigo_SKU: presentacion.Item_Presentacion_CodigoSKU || '',
       Codigo_Barras: presentacion.Item_Presentaciones_CodigoBarras || '',
-      Factor_Conversion: presentacion.Presentacion_Cantidad || '',
-      Precio_Venta: presentacion.Item_Presentaciones_Precio || ''
+      Costo: presentacion.Item_Presentaciones_Costo || ''
     });
     setEditingPresentacion(presentacion);
     setIsPresentacionModalOpen(true);
@@ -197,11 +192,11 @@ const ItemDetails = () => {
   const handleClosePresentacionModal = () => {
     setIsPresentacionModalOpen(false);
     setPresentacionFormData({
-      Presentacion_Id: '',
+      Presentacion_Nombre: '',
+      Cantidad_Base: '',
       Codigo_SKU: '',
       Codigo_Barras: '',
-      Factor_Conversion: '',
-      Precio_Venta: ''
+      Costo: ''
     });
     setEditingPresentacion(null);
   };
@@ -215,14 +210,15 @@ const ItemDetails = () => {
       
       const data = {
         Item_Id: parseInt(id),
-        Presentacion_Id: parseInt(presentacionFormData.Presentacion_Id),
-        Item_Presentacion_CodigoSKU: presentacionFormData.Codigo_SKU,
-        Item_Presentaciones_CodigoBarras: presentacionFormData.Codigo_Barras || null,
-        Item_Presentaciones_Precio: parseFloat(presentacionFormData.Precio_Venta)
+        Presentacion_Nombre: presentacionFormData.Presentacion_Nombre.trim(),
+        Cantidad_Base: parseFloat(presentacionFormData.Cantidad_Base),
+        Item_Presentacion_CodigoSKU: presentacionFormData.Codigo_SKU.trim() || null,
+        Item_Presentaciones_CodigoBarras: presentacionFormData.Codigo_Barras.trim() || null,
+        Item_Presentaciones_Costo: presentacionFormData.Costo ? parseFloat(presentacionFormData.Costo) : null
       };
 
       if (editingPresentacion) {
-        await itemPresentacionService.updateItemPresentacion(editingPresentacion.ItemPresentacion_Id, data);
+        await itemPresentacionService.updateItemPresentacion(editingPresentacion.Item_Presentaciones_Id, data);
         toast.success('Presentación actualizada exitosamente');
       } else {
         await itemPresentacionService.createItemPresentacion(data);
@@ -258,7 +254,6 @@ const ItemDetails = () => {
     if (id) {
       loadItem();
       loadCategories();
-      loadPresentaciones();
       loadItemPresentaciones();
     }
   }, [id]);
@@ -426,19 +421,22 @@ const ItemDetails = () => {
                           
                           <div>
                             <label className="block text-xs font-medium text-muted-foreground mb-1">
-                              Factor Conversión
+                              Cantidad Base
                             </label>
                             <p className="text-sm text-foreground">
-                              {presentacion.Presentacion_Cantidad || '0'}x
+                              {presentacion.Cantidad_Base || '0'}
                             </p>
                           </div>
                           
                           <div>
                             <label className="block text-xs font-medium text-muted-foreground mb-1">
-                              Precio Venta
+                              Costo
                             </label>
                             <p className="text-sm font-semibold text-primary">
-                              Q{parseFloat(presentacion.Item_Presentaciones_Precio || 0).toFixed(2)}
+                              {presentacion.Item_Presentaciones_Costo ? 
+                                `Q${parseFloat(presentacion.Item_Presentaciones_Costo).toFixed(2)}` : 
+                                'N/A'
+                              }
                             </p>
                           </div>
                         </div>
@@ -519,8 +517,8 @@ const ItemDetails = () => {
               {item.UnidadMedida_Nombre && (
                 <div>
                   <label className="block text-sm font-medium text-muted-foreground mb-1">Unidad de Medida</label>
-                  <p className="text-xl font-semibold text-secondary-foreground">
-                    {item.UnidadMedida_Nombre} ({item.UnidadMedida_Abreviacion})
+                  <p className="text-xl font-semibold text-blue-700">
+                    {item.UnidadMedida_Nombre} ({item.UnidadMedida_Prefijo})
                   </p>
                 </div>
               )}
@@ -593,42 +591,55 @@ const ItemDetails = () => {
               </div>
 
               <form onSubmit={handlePresentacionFormSubmit} className="space-y-4">
-                {/* Factor de Conversión */}
+                {/* Nombre de Presentación */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Factor de Conversión (de la presentación) *
+                    Nombre de Presentación *
                   </label>
-                  <select
-                    value={presentacionFormData.Presentacion_Id}
-                    onChange={(e) => {
-                      const selectedPresentacion = presentaciones.find(p => p.Presentacion_Id == e.target.value);
-                      setPresentacionFormData({
-                        ...presentacionFormData,
-                        Presentacion_Id: e.target.value,
-                        Factor_Conversion: selectedPresentacion ? selectedPresentacion.Presentacion_Cantidad : ''
-                      });
-                    }}
+                  <input
+                    type="text"
+                    value={presentacionFormData.Presentacion_Nombre}
+                    onChange={(e) => setPresentacionFormData({
+                      ...presentacionFormData,
+                      Presentacion_Nombre: e.target.value
+                    })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                    placeholder="Ej: Caja x12, Paquete x6, Unidad"
+                    maxLength={30}
                     required
-                  >
-                    <option value="">Seleccionar presentación...</option>
-                    {presentaciones.map((presentacion) => (
-                      <option key={presentacion.Presentacion_Id} value={presentacion.Presentacion_Id}>
-                        {presentacion.Presentacion_Nombre} ({presentacion.UnidadMedida_Nombre}) - Factor: {presentacion.Presentacion_Cantidad}x
-                      </option>
-                    ))}
-                  </select>
-                  {presentacionFormData.Factor_Conversion && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Factor de conversión: {presentacionFormData.Factor_Conversion}x
-                    </p>
-                  )}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Máximo 30 caracteres
+                  </p>
+                </div>
+
+                {/* Cantidad Base */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Cantidad Base *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0.0001"
+                    value={presentacionFormData.Cantidad_Base}
+                    onChange={(e) => setPresentacionFormData({
+                      ...presentacionFormData,
+                      Cantidad_Base: e.target.value
+                    })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                    placeholder="Ej: 12.0000"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cantidad de unidades base que contiene esta presentación
+                  </p>
                 </div>
 
                 {/* Código SKU */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Código SKU *
+                    Código SKU
                   </label>
                   <input
                     type="text"
@@ -638,9 +649,12 @@ const ItemDetails = () => {
                       Codigo_SKU: e.target.value
                     })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-                    placeholder="Ej: SKU001-PRES001"
-                    required
+                    placeholder="Ej: ITEM001-CX12"
+                    maxLength={20}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Opcional - Máximo 20 caracteres
+                  </p>
                 </div>
 
                 {/* Código de Barras */}
@@ -657,27 +671,33 @@ const ItemDetails = () => {
                     })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                     placeholder="Ej: 1234567890123"
+                    maxLength={20}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Opcional - Máximo 20 caracteres
+                  </p>
                 </div>
 
-                {/* Precio de Venta */}
+                {/* Costo */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Precio de Venta *
+                    Costo de la Presentación
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
-                    value={presentacionFormData.Precio_Venta}
+                    value={presentacionFormData.Costo}
                     onChange={(e) => setPresentacionFormData({
                       ...presentacionFormData,
-                      Precio_Venta: e.target.value
+                      Costo: e.target.value
                     })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-                    placeholder="Ej: 25.99"
-                    required
+                    placeholder="Ej: 150.50"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Opcional - Costo específico de esta presentación
+                  </p>
                 </div>
 
                 {/* Botones */}
