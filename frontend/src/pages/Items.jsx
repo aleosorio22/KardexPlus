@@ -6,6 +6,7 @@ import { ItemFormModal } from '../components/Modals';
 import ConfirmModal from '../components/ConfirmModal';
 import itemService from '../services/itemService';
 import categoryService from '../services/categoryService';
+import { formatCurrency } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
 const Items = () => {
@@ -141,7 +142,7 @@ const Items = () => {
         <div className="space-y-1">
           <div className="flex items-center space-x-1">
             <span className="text-sm font-medium text-primary">
-              Q{parseFloat(item.Item_Costo_Unitario || 0).toFixed(2)}
+              Q{formatCurrency(item.Item_Costo_Unitario || 0)}
             </span>
           </div>
           {item.UnidadMedida_Nombre && (
