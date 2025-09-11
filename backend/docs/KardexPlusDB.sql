@@ -91,14 +91,16 @@ CREATE UNIQUE INDEX uk_item_codigo_barra ON `Items` (`Item_Codigo_Barra`);
 CREATE TABLE `Items_Presentaciones` (
   `Item_Presentaciones_Id` int PRIMARY KEY AUTO_INCREMENT,
   `Item_Id` int NOT NULL,
-  `Presentacion_Id` int NOT NULL,
+  `Presentacion_Nombre` varchar(30) NOT NULL,
+  `Cantidad_Base` decimal(10,4) NOT NULL,
   `Item_Presentacion_CodigoSKU` varchar(20),
   `Item_Presentaciones_CodigoBarras` varchar(20),
-  `Item_Presentaciones_Costo` decimal(10,2),
-  `Item_Presentaciones_Precio` decimal(10,2),
+  `Item_Presentaciones_Costo` decimal(10,4),
+  `Item_Presentaciones_Precio` decimal(10,4),
   CONSTRAINT chk_item_pres_costo_positivo CHECK (`Item_Presentaciones_Costo` IS NULL OR `Item_Presentaciones_Costo` >= 0),
   CONSTRAINT chk_item_pres_precio_positivo CHECK (`Item_Presentaciones_Precio` IS NULL OR `Item_Presentaciones_Precio` >= 0),
-  CONSTRAINT uk_item_presentacion UNIQUE (`Item_Id`, `Presentacion_Id`)
+  CONSTRAINT chk_cantidad_base CHECK (`Cantidad_Base` > 0),
+  CONSTRAINT uk_item_presentacion UNIQUE (`Item_Id`, `Presentacion_Nombre`)
 );
 
 -- Índices únicos para códigos de presentaciones (permitiendo NULL)
@@ -292,7 +294,6 @@ ALTER TABLE `Items` ADD FOREIGN KEY (`UnidadMedidaBase_Id`) REFERENCES `Unidades
 ALTER TABLE `Presentaciones` ADD FOREIGN KEY (`UnidadMedida_Id`) REFERENCES `UnidadesMedida` (`UnidadMedida_Id`) ON DELETE RESTRICT;
 
 ALTER TABLE `Items_Presentaciones` ADD FOREIGN KEY (`Item_Id`) REFERENCES `Items` (`Item_Id`) ON DELETE CASCADE;
-ALTER TABLE `Items_Presentaciones` ADD FOREIGN KEY (`Presentacion_Id`) REFERENCES `Presentaciones` (`Presentacion_Id`) ON DELETE RESTRICT;
 
 ALTER TABLE `Bodegas` ADD FOREIGN KEY (`Responsable_Id`) REFERENCES `Usuarios` (`Usuario_Id`) ON DELETE SET NULL;
 
