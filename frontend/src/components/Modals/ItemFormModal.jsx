@@ -232,11 +232,11 @@ export default function ItemFormModal({
                         type="number"
                         required
                         min="0"
-                        step="0.01"
+                        step="0.0001"
                         value={formData.Item_Costo_Unitario || ''}
                         onChange={(e) => handleInputChange('Item_Costo_Unitario', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
-                        placeholder="0.00"
+                        placeholder="0.0000"
                         disabled={isLoading}
                       />
                     </div>

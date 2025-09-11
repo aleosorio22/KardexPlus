@@ -5,6 +5,7 @@ import { ItemFormModal } from '../components/Modals';
 import itemService from '../services/itemService';
 import categoryService from '../services/categoryService';
 import itemPresentacionService from '../services/itemPresentacionService';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
 const ItemDetails = () => {
@@ -423,10 +424,7 @@ const ItemDetails = () => {
                               Cantidad Base
                             </label>
                             <p className="text-sm text-foreground">
-                              {presentacion.Cantidad_Base ? 
-                                parseFloat(presentacion.Cantidad_Base).toFixed(4) : 
-                                '0.0000'
-                              }
+                              {formatNumber(presentacion.Cantidad_Base, 4, 0)}
                             </p>
                           </div>
                           
@@ -436,7 +434,7 @@ const ItemDetails = () => {
                             </label>
                             <p className="text-sm font-semibold text-primary">
                               {presentacion.Item_Presentaciones_Costo ? 
-                                `Q${parseFloat(presentacion.Item_Presentaciones_Costo).toFixed(4)}` : 
+                                `Q${formatCurrency(presentacion.Item_Presentaciones_Costo)}` : 
                                 'N/A'
                               }
                             </p>
@@ -512,7 +510,7 @@ const ItemDetails = () => {
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1">Costo Unitario</label>
                 <p className="text-2xl font-bold text-primary">
-                  Q{parseFloat(item.Item_Costo_Unitario || 0).toFixed(2)}
+                  Q{formatCurrency(item.Item_Costo_Unitario || 0)}
                 </p>
               </div>
               
