@@ -5,7 +5,6 @@ import { ItemFormModal } from '../components/Modals';
 import itemService from '../services/itemService';
 import categoryService from '../services/categoryService';
 import itemPresentacionService from '../services/itemPresentacionService';
-import presentacionService from '../services/presentacionService';
 import toast from 'react-hot-toast';
 
 const ItemDetails = () => {
@@ -424,7 +423,10 @@ const ItemDetails = () => {
                               Cantidad Base
                             </label>
                             <p className="text-sm text-foreground">
-                              {presentacion.Cantidad_Base || '0'}
+                              {presentacion.Cantidad_Base ? 
+                                parseFloat(presentacion.Cantidad_Base).toFixed(4) : 
+                                '0.0000'
+                              }
                             </p>
                           </div>
                           
@@ -434,7 +436,7 @@ const ItemDetails = () => {
                             </label>
                             <p className="text-sm font-semibold text-primary">
                               {presentacion.Item_Presentaciones_Costo ? 
-                                `Q${parseFloat(presentacion.Item_Presentaciones_Costo).toFixed(2)}` : 
+                                `Q${parseFloat(presentacion.Item_Presentaciones_Costo).toFixed(4)}` : 
                                 'N/A'
                               }
                             </p>
@@ -685,7 +687,7 @@ const ItemDetails = () => {
                   </label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.0001"
                     min="0"
                     value={presentacionFormData.Costo}
                     onChange={(e) => setPresentacionFormData({
@@ -693,7 +695,7 @@ const ItemDetails = () => {
                       Costo: e.target.value
                     })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-                    placeholder="Ej: 150.50"
+                    placeholder="Ej: 150.2285"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Opcional - Costo específico de esta presentación

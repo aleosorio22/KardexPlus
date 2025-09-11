@@ -13,7 +13,6 @@ import RolePermissions from "../pages/admin/RolePermissions";
 import SystemSetup from "../pages/admin/SystemSetup";
 import UnidadesMedida from "../pages/admin/UnidadesMedida";
 import Categories from "../pages/Categories";
-import Presentaciones from "../pages/Presentaciones";
 import Items from "../pages/Items";
 import ItemDetails from "../pages/ItemDetails";
 import NotFound from "../pages/NotFound";
@@ -75,10 +74,6 @@ function AppRouter() {
                   element={<UnidadesMedida />}
                 />
                 
-                <Route 
-                  path="configuracion/presentaciones" 
-                  element={<Presentaciones />}
-                />
                 
                 <Route 
                   path="inventario/categorias" 

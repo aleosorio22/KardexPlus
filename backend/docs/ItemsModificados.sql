@@ -38,8 +38,8 @@ CREATE TABLE Items_Presentaciones (
   Cantidad_Base DECIMAL(10,4) NOT NULL,           -- Cuántas unidades base contiene
   Item_Presentacion_CodigoSKU VARCHAR(20),
   Item_Presentaciones_CodigoBarras VARCHAR(20),
-  Item_Presentaciones_Costo DECIMAL(10,2),
-  Item_Presentaciones_Precio DECIMAL(10,2),
+  Item_Presentaciones_Costo DECIMAL(10,4),        -- Precisión de 4 decimales para costos exactos
+  Item_Presentaciones_Precio DECIMAL(10,4),       -- Precisión de 4 decimales para precios exactos
 
   CONSTRAINT fk_itemspres_items FOREIGN KEY (Item_Id) REFERENCES Items(Item_Id),
   CONSTRAINT uk_item_presentacion UNIQUE (Item_Id, Presentacion_Nombre),

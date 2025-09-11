@@ -20,7 +20,6 @@ const roleRoutes = require('./modules/roles/role.routes');
 const setupRoutes = require('./modules/setup/setup.routes');
 const categoryRoutes = require('./modules/categories/category.routes');
 const unidadMedidaRoutes = require('./modules/unidades-medida/unidad-medida.routes');
-const presentacionRoutes = require('./modules/presentaciones/presentacion.routes');
 const itemRoutes = require('./modules/items/item.routes');
 const itemPresentacionRoutes = require('./modules/item-presentaciones/item-presentacion.routes');
 
@@ -83,9 +82,6 @@ app.use('/api/categories', categoryRoutes);
 
 // Rutas de unidades de medida
 app.use('/api/unidades-medida', unidadMedidaRoutes);
-
-// Rutas de presentaciones
-app.use('/api/presentaciones', presentacionRoutes);
 
 // Rutas de items
 app.use('/api/items', itemRoutes);
