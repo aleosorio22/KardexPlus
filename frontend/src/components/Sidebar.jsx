@@ -19,7 +19,11 @@ import {
   FiBox,
   FiTag,
   FiTool,
-  FiDatabase
+  FiDatabase,
+  FiBarChart2,
+  FiArchive,
+  FiRefreshCw,
+  FiClipboard
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -110,21 +114,41 @@ export default function Sidebar() {
     },
     { 
       name: "Bodegas", 
-      icon: FiBox, 
-      path: "/bodegas",
-      permission: "bodegas.ver"
+      icon: FiDatabase, 
+      hasSubmenu: true,
+      modulePermission: "bodegas",
+      submenu: [
+        { 
+          name: "Resumen", 
+          icon: FiBarChart2, 
+          path: "/bodegas/resumen",
+          permission: "bodegas.ver"
+        },
+        { 
+          name: "Existencias", 
+          icon: FiArchive, 
+          path: "/bodegas/existencias",
+          permission: "bodegas.ver"
+        },
+        { 
+          name: "Movimientos", 
+          icon: FiRefreshCw, 
+          path: "/bodegas/movimientos",
+          permission: "bodegas.ver"
+        },
+        { 
+          name: "Requerimientos", 
+          icon: FiClipboard, 
+          path: "/bodegas/requerimientos",
+          permission: "bodegas.ver"
+        },
+      ]
     },
     { 
       name: "Compras", 
       icon: FiShoppingCart, 
       path: "/compras",
       permission: "compras.ver"
-    },
-    { 
-      name: "Reportes", 
-      icon: FiPieChart, 
-      path: "/reportes",
-      permission: "reportes.inventario"
     },
     { 
       name: "Configuración", 
