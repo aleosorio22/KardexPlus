@@ -15,6 +15,7 @@ import UnidadesMedida from "../pages/admin/UnidadesMedida";
 import Categories from "../pages/Categories";
 import Items from "../pages/Items";
 import ItemDetails from "../pages/ItemDetails";
+import Bodegas from "../pages/Bodegas";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -74,6 +75,10 @@ function AppRouter() {
                   element={<UnidadesMedida />}
                 />
                 
+                <Route 
+                  path="configuracion/bodegas" 
+                  element={<Bodegas />}
+                />
                 
                 <Route 
                   path="inventario/categorias" 

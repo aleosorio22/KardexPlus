@@ -33,7 +33,7 @@ class BodegaModel {
             Bodega_Tipo || null,
             Bodega_Ubicacion || null,
             Responsable_Id || null,
-            Bodega_Estado !== undefined ? Bodega_Estado : true
+            Bodega_Estado !== undefined ? (Bodega_Estado ? 1 : 0) : 1
         ]);
         
         return result.insertId;
@@ -117,7 +117,7 @@ class BodegaModel {
             Bodega_Tipo || null,
             Bodega_Ubicacion || null,
             Responsable_Id || null,
-            Bodega_Estado !== undefined ? Bodega_Estado : true,
+            Bodega_Estado !== undefined ? (Bodega_Estado ? 1 : 0) : 1,
             id
         ]);
         
@@ -131,7 +131,7 @@ class BodegaModel {
      */
     static async delete(id) {
         const [result] = await db.execute(`
-            UPDATE Bodegas SET Bodega_Estado = false WHERE Bodega_Id = ?
+            UPDATE Bodegas SET Bodega_Estado = 0 WHERE Bodega_Id = ?
         `, [id]);
         
         return result.affectedRows > 0;
@@ -144,7 +144,7 @@ class BodegaModel {
      */
     static async restore(id) {
         const [result] = await db.execute(`
-            UPDATE Bodegas SET Bodega_Estado = true WHERE Bodega_Id = ?
+            UPDATE Bodegas SET Bodega_Estado = 1 WHERE Bodega_Id = ?
         `, [id]);
         
         return result.affectedRows > 0;
@@ -154,13 +154,14 @@ class BodegaModel {
      * Busca bodegas con paginación
      * @param {number} offset - Número de registros a saltar
      * @param {number} limit - Número máximo de registros a retornar
-     * @param {string} search - Término de búsqueda (opcional)
-     * @param {string} tipo - Tipo de bodega para filtrar (opcional)
-     * @param {string} estado - Estado para filtrar (opcional)
      * @returns {Promise<Object>} - Objeto con data y total
      */
-    static async findWithPagination(offset = 0, limit = 10, search = '', tipo = '', estado = '') {
-        let query = `
+    static async findWithPagination(offset = 0, limit = 10) {
+        // Asegurar que offset y limit sean enteros
+        const parsedOffset = parseInt(offset, 10) || 0;
+        const parsedLimit = parseInt(limit, 10) || 10;
+        
+        const query = `
             SELECT 
                 b.Bodega_Id,
                 b.Bodega_Nombre,
@@ -172,49 +173,21 @@ class BodegaModel {
                 u.Usuario_Correo as Responsable_Correo
             FROM Bodegas b
             LEFT JOIN Usuarios u ON b.Responsable_Id = u.Usuario_Id
+            ORDER BY b.Bodega_Nombre ASC 
+            LIMIT ${parsedOffset}, ${parsedLimit}
         `;
-        let countQuery = 'SELECT COUNT(*) as total FROM Bodegas b LEFT JOIN Usuarios u ON b.Responsable_Id = u.Usuario_Id';
-        let params = [];
-        let whereConditions = [];
-
-        if (search && search.trim() !== '') {
-            whereConditions.push(`(
-                b.Bodega_Nombre LIKE ? OR 
-                b.Bodega_Ubicacion LIKE ? OR
-                CONCAT(u.Usuario_Nombre, ' ', u.Usuario_Apellido) LIKE ?
-            )`);
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-        }
-
-        if (tipo && tipo.trim() !== '') {
-            whereConditions.push('b.Bodega_Tipo = ?');
-            params.push(tipo);
-        }
-
-        if (estado && estado.trim() !== '') {
-            whereConditions.push('b.Bodega_Estado = ?');
-            params.push(estado === 'true');
-        }
-
-        if (whereConditions.length > 0) {
-            const whereClause = ' WHERE ' + whereConditions.join(' AND ');
-            query += whereClause;
-            countQuery += whereClause;
-        }
-
-        query += ' ORDER BY b.Bodega_Nombre ASC LIMIT ? OFFSET ?';
         
-        const queryParams = [...params, parseInt(limit), parseInt(offset)];
-        const countParams = [...params];
-
-        const [bodegas] = await db.execute(query, queryParams);
-        const [countResult] = await db.execute(countQuery, countParams);
-
+        const countQuery = 'SELECT COUNT(*) as total FROM Bodegas';
+        
+        const [bodegas] = await db.execute(query); // ya no pasamos parámetros
+        const [countResult] = await db.execute(countQuery);
+        
         return {
             data: bodegas,
             total: countResult[0].total
         };
     }
+
 
     /**
      * Cuenta el número total de bodegas

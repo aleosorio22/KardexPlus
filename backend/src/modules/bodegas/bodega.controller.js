@@ -115,48 +115,56 @@ exports.createBodega = async (req, res) => {
 };
 
 /**
- * Obtiene todas las bodegas con paginación opcional
+ * Obtiene todas las bodegas
  * @param {Object} req - Objeto de solicitud
  * @param {Object} res - Objeto de respuesta
  */
 exports.getAllBodegas = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 50;
-        const search = req.query.search || '';
-        const tipo = req.query.tipo || '';
-        const estado = req.query.estado || '';
-
-        let bodegas;
-
-        if (req.query.paginate === 'true') {
-            const offset = (page - 1) * limit;
-            const result = await BodegaModel.findWithPagination(offset, limit, search, tipo, estado);
-            
-            bodegas = {
-                data: result.data,
-                pagination: {
-                    currentPage: page,
-                    totalPages: Math.ceil(result.total / limit),
-                    totalItems: result.total,
-                    itemsPerPage: limit,
-                    hasNextPage: page < Math.ceil(result.total / limit),
-                    hasPreviousPage: page > 1
-                }
-            };
-        } else {
-            const data = await BodegaModel.findAll();
-            bodegas = { data };
-        }
-
+        const bodegas = await BodegaModel.findAll();
+        
         res.json({
             success: true,
             message: 'Bodegas obtenidas exitosamente',
-            ...bodegas
+            data: bodegas
         });
 
     } catch (error) {
         console.error('Error al obtener bodegas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+/**
+ * Obtiene bodegas con paginación
+ * @param {Object} req - Objeto de solicitud
+ * @param {Object} res - Objeto de respuesta
+ */
+exports.getBodegasWithPagination = async (req, res) => {
+    try {
+        // Validar y asegurar que page y limit sean enteros válidos
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10)); // Max 100 por página
+        const offset = (page - 1) * limit;
+
+        const result = await BodegaModel.findWithPagination(offset, limit);
+        
+        res.json({
+            success: true,
+            message: 'Bodegas obtenidas exitosamente',
+            data: result.data,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(result.total / limit),
+                totalRecords: result.total,
+                recordsPerPage: limit
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener bodegas con paginación:', error);
         res.status(500).json({
             success: false,
             message: 'Error interno del servidor'

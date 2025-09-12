@@ -12,6 +12,13 @@ const router = express.Router();
 router.get('/', authMiddleware, hasPermission('bodegas.ver'), bodegaController.getAllBodegas);
 
 /**
+ * @route GET /api/bodegas/paginated
+ * @desc Obtener bodegas con paginación y filtros
+ * @access Private (Requiere permiso bodegas.ver)
+ */
+router.get('/paginated', authMiddleware, hasPermission('bodegas.ver'), bodegaController.getBodegasWithPagination);
+
+/**
  * @route GET /api/bodegas/stats
  * @desc Obtener estadísticas de bodegas
  * @access Private (Requiere permiso bodegas.ver)
