@@ -18,7 +18,8 @@ import {
   FiClock,
   FiBox,
   FiTag,
-  FiTool
+  FiTool,
+  FiDatabase
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -136,6 +137,12 @@ export default function Sidebar() {
           icon: FiUsers, 
           path: "/configuracion/usuarios",
           permission: "usuarios.ver"
+        },
+        { 
+          name: "Bodegas", 
+          icon: FiDatabase, 
+          path: "/configuracion/bodegas",
+          permission: "bodegas.ver"
         },
         { 
           name: "Unidades de Medida", 

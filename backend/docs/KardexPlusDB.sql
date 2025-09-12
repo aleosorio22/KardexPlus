@@ -70,7 +70,7 @@ CREATE TABLE `Items` (
   `Item_Codigo_SKU` varchar(20),
   `Item_Codigo_Barra` varchar(20),
   `Item_Nombre` varchar(50) UNIQUE NOT NULL,
-  `Item_Costo_Unitario` decimal(10,2) NOT NULL,
+  `Item_Costo_Unitario` decimal(10,4) NOT NULL,
   `Item_Stock_Min` int DEFAULT 0,
   `Item_Stock_Max` int,
   `Item_Estado` boolean DEFAULT true,
