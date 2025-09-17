@@ -16,6 +16,13 @@ import Categories from "../pages/Categories";
 import Items from "../pages/Items";
 import ItemDetails from "../pages/ItemDetails";
 import Bodegas from "../pages/Bodegas";
+import BodegaDetails from "../pages/BodegaDetails";
+import ConfigurarParametrosStock from "../pages/ConfigurarParametrosStock";
+import ResumenBodegas from "../pages/ResumenBodegas";
+import ExistenciasBodegas from "../pages/ExistenciasBodegas";
+import MovimientosBodegas from "../pages/MovimientosBodegas";
+import CrearMovimiento from "../pages/CrearMovimiento";
+import RequerimientosBodegas from "../pages/RequerimientosBodegas";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -78,6 +85,42 @@ function AppRouter() {
                 <Route 
                   path="configuracion/bodegas" 
                   element={<Bodegas />}
+                />
+                
+                <Route 
+                  path="configuracion/bodegas/:id/detalles" 
+                  element={<BodegaDetails />}
+                />
+                
+                <Route 
+                  path="configuracion/bodegas/:id/parametros" 
+                  element={<ConfigurarParametrosStock />}
+                />
+                
+                {/* Rutas operacionales de Bodegas */}
+                <Route 
+                  path="bodegas/resumen" 
+                  element={<ResumenBodegas />}
+                />
+                
+                <Route 
+                  path="bodegas/existencias" 
+                  element={<ExistenciasBodegas />}
+                />
+                
+                <Route 
+                  path="bodegas/movimientos" 
+                  element={<MovimientosBodegas />}
+                />
+                
+                <Route 
+                  path="bodegas/movimientos/crear/:tipo" 
+                  element={<CrearMovimiento />}
+                />
+                
+                <Route 
+                  path="bodegas/requerimientos" 
+                  element={<RequerimientosBodegas />}
                 />
                 
                 <Route 

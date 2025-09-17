@@ -23,6 +23,9 @@ const unidadMedidaRoutes = require('./modules/unidades-medida/unidad-medida.rout
 const itemRoutes = require('./modules/items/item.routes');
 const itemPresentacionRoutes = require('./modules/item-presentaciones/item-presentacion.routes');
 const bodegaRoutes = require('./modules/bodegas/bodega.routes');
+const existenciaRoutes = require('./modules/existencias/existencia.routes');
+const itemBodegaParamRoutes = require('./modules/existencias/itemBodegaParam.routes');
+const movimientoRoutes = require('./modules/movimientos/movimiento.routes');
 
 
 // Inicializar app
@@ -92,6 +95,15 @@ app.use('/api/item-presentaciones', itemPresentacionRoutes);
 
 // Rutas de bodegas
 app.use('/api/bodegas', bodegaRoutes);
+
+// Rutas de existencias
+app.use('/api/existencias', existenciaRoutes);
+
+// Rutas de parámetros de items por bodega
+app.use('/api/item-bodega-parametros', itemBodegaParamRoutes);
+
+// Rutas de movimientos de inventario
+app.use('/api/movimientos', movimientoRoutes);
 
 // Rutas de configuración temporal (para desarrollo)
 app.use('/api/setup', setupRoutes);

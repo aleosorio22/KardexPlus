@@ -25,8 +25,6 @@ const ItemDetails = () => {
     Item_Codigo_Barra: '',
     Item_Nombre: '',
     Item_Costo_Unitario: '',
-    Item_Stock_Min: '',
-    Item_Stock_Max: '',
     Item_Estado: true,
     CategoriaItem_Id: '',
     UnidadMedidaBase_Id: ''
@@ -107,8 +105,6 @@ const ItemDetails = () => {
       Item_Codigo_Barra: item.Item_Codigo_Barra || '',
       Item_Nombre: item.Item_Nombre || '',
       Item_Costo_Unitario: item.Item_Costo_Unitario || '',
-      Item_Stock_Min: item.Item_Stock_Min || '',
-      Item_Stock_Max: item.Item_Stock_Max || '',
       Item_Estado: item.Item_Estado !== undefined ? item.Item_Estado : true,
       CategoriaItem_Id: item.CategoriaItem_Id || '',
       UnidadMedidaBase_Id: item.UnidadMedidaBase_Id || ''
@@ -124,8 +120,6 @@ const ItemDetails = () => {
       Item_Codigo_Barra: '',
       Item_Nombre: '',
       Item_Costo_Unitario: '',
-      Item_Stock_Min: '',
-      Item_Stock_Max: '',
       Item_Estado: true,
       CategoriaItem_Id: '',
       UnidadMedidaBase_Id: ''
@@ -142,8 +136,6 @@ const ItemDetails = () => {
         Item_Codigo_Barra: data.Item_Codigo_Barra || null,
         Item_Nombre: data.Item_Nombre,
         Item_Costo_Unitario: parseFloat(data.Item_Costo_Unitario),
-        Item_Stock_Min: data.Item_Stock_Min ? parseInt(data.Item_Stock_Min) : 0,
-        Item_Stock_Max: data.Item_Stock_Max ? parseInt(data.Item_Stock_Max) : null,
         Item_Estado: Boolean(data.Item_Estado),
         CategoriaItem_Id: parseInt(data.CategoriaItem_Id),
         UnidadMedidaBase_Id: parseInt(data.UnidadMedidaBase_Id)
@@ -525,36 +517,21 @@ const ItemDetails = () => {
             </div>
           </div>
 
-          {/* Control de Stock */}
+          {/* Información adicional */}
           <div className="bg-card rounded-lg border p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center space-x-2">
               <FiBarChart className="w-5 h-5" />
-              <span>Control de Stock</span>
+              <span>Gestión de Inventario</span>
             </h3>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">Stock Mínimo</label>
-                <p className="text-lg font-semibold text-orange-600">
-                  {item.Item_Stock_Min || 0} unidades
-                </p>
-              </div>
-              
-              {item.Item_Stock_Max && (
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1">Stock Máximo</label>
-                  <p className="text-lg font-semibold text-purple-600">
-                    {item.Item_Stock_Max} unidades
-                  </p>
-                </div>
-              )}
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground">
-                  <FiBarChart className="w-4 h-4 inline mr-1" />
-                  Próximamente: Stock actual y alertas
-                </p>
-              </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>📋 Información importante:</strong><br/>
+                El control de stock (mínimos, máximos, puntos de reorden) ahora se configura individualmente por bodega en la sección de <strong>Existencias</strong>.
+              </p>
+              <p className="text-xs text-blue-600 mt-2">
+                Esto permite mayor flexibilidad para manejar diferentes niveles según cada ubicación.
+              </p>
             </div>
           </div>
         </div>

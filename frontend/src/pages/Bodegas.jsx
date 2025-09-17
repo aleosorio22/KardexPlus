@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FiDatabase, 
   FiPlus, 
@@ -8,7 +8,8 @@ import {
   FiRotateCcw,
   FiUser,
   FiMapPin,
-  FiTag
+  FiTag,
+  FiFileText
 } from 'react-icons/fi';
 import bodegaService from '../services/bodegaService';
 import userService from '../services/userService';
@@ -18,6 +19,7 @@ import { BodegaFormModal } from '../components/Modals';
 import ConfirmModal from '../components/ConfirmModal';
 
 const Bodegas = () => {
+  const navigate = useNavigate();
   const [bodegas, setBodegas] = useState([]);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -349,9 +351,22 @@ const Bodegas = () => {
     });
   };
 
+  // Navegar a los detalles de la bodega
+  const handleViewBodegaDetails = (bodega) => {
+    navigate(`/configuracion/bodegas/${bodega.Bodega_Id}/detalles`);
+  };
+
   // Renderizar acciones de fila
   const renderRowActions = (bodega) => (
     <>
+      <button
+        onClick={() => handleViewBodegaDetails(bodega)}
+        className="p-2 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+        title="Ver detalles de la bodega"
+      >
+        <FiFileText className="w-4 h-4" />
+      </button>
+
       <button
         onClick={() => handleEditBodega(bodega)}
         className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
@@ -431,6 +446,10 @@ const Bodegas = () => {
           <div className="text-sm">
             <p className="text-blue-800 font-medium">Acciones disponibles:</p>
             <ul className="text-blue-700 mt-1 space-y-1">
+              <li className="flex items-center space-x-2">
+                <FiFileText className="w-4 h-4" />
+                <span><strong>Detalles:</strong> Ver información detallada y configurar parámetros</span>
+              </li>
               <li className="flex items-center space-x-2">
                 <FiEdit className="w-4 h-4" />
                 <span><strong>Editar:</strong> Modificar información de la bodega</span>

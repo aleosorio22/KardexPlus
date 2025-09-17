@@ -40,8 +40,6 @@ export default function ItemFormModal({
         Item_Codigo_Barra: selectedItem.Item_Codigo_Barra || '',
         Item_Nombre: selectedItem.Item_Nombre || '',
         Item_Costo_Unitario: selectedItem.Item_Costo_Unitario || '',
-        Item_Stock_Min: selectedItem.Item_Stock_Min || '',
-        Item_Stock_Max: selectedItem.Item_Stock_Max || '',
         Item_Estado: selectedItem.Item_Estado !== undefined ? selectedItem.Item_Estado : true,
         CategoriaItem_Id: selectedItem.CategoriaItem_Id || '',
         UnidadMedidaBase_Id: selectedItem.UnidadMedidaBase_Id || ''
@@ -53,8 +51,6 @@ export default function ItemFormModal({
         Item_Codigo_Barra: '',
         Item_Nombre: '',
         Item_Costo_Unitario: '',
-        Item_Stock_Min: '',
-        Item_Stock_Max: '',
         Item_Estado: true,
         CategoriaItem_Id: '',
         UnidadMedidaBase_Id: ''
@@ -242,51 +238,17 @@ export default function ItemFormModal({
                     </div>
                   </div>
 
-                  {/* Control de Stock */}
+                  {/* Información adicional */}
                   <div className="bg-blue-50 rounded-lg p-4 space-y-4">
                     <h3 className="text-sm font-medium text-gray-700 flex items-center space-x-2">
                       <FiBarChart className="w-4 h-4" />
-                      <span>Control de Stock</span>
+                      <span>Información Adicional</span>
                     </h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Stock Mínimo
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={formData.Item_Stock_Min || ''}
-                          onChange={(e) => handleInputChange('Item_Stock_Min', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
-                          placeholder="0"
-                          disabled={isLoading}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Cantidad mínima antes de generar alertas
-                        </p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Stock Máximo
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={formData.Item_Stock_Max || ''}
-                          onChange={(e) => handleInputChange('Item_Stock_Max', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
-                          placeholder="Opcional"
-                          disabled={isLoading}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Cantidad máxima recomendada
-                        </p>
-                      </div>
+                    <div className="bg-blue-100 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>📋 Nota importante:</strong> El control de stock (mínimos, máximos y puntos de reorden) ahora se configura por bodega individual en la sección de <strong>Parámetros por Bodega</strong>. Esto permite mayor flexibilidad para manejar diferentes niveles de inventario según cada ubicación.
+                      </p>
                     </div>
                   </div>
 
