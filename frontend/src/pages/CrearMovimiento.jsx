@@ -9,6 +9,7 @@ import { itemService } from '../services/itemService';
 import { movimientoService } from '../services/movimientoService';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { TablaItems } from '../components/MovimientoCreacion';
 import toast from 'react-hot-toast';
 
 const CrearMovimiento = () => {
@@ -19,7 +20,6 @@ const CrearMovimiento = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setSaving] = useState(false);
     const [bodegas, setBodegas] = useState([]);
-    const [items, setItems] = useState([]);
     
     // Estados para modal de confirmación
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -40,10 +40,7 @@ const CrearMovimiento = () => {
     });
 
     // Items del movimiento
-    const [itemsMovimiento, setItemsMovimiento] = useState([{
-        Item_Id: '',
-        Cantidad: ''
-    }]);
+    const [itemsMovimiento, setItemsMovimiento] = useState([]);
 
     const getTipoInfo = (tipo) => {
         const tipos = {
@@ -175,26 +172,24 @@ const CrearMovimiento = () => {
         }
     }, [user, tipo]);
 
+    // Actualizar stock de items cuando cambian las bodegas
+    useEffect(() => {
+        if (itemsMovimiento.length > 0) {
+            // Forzar actualización de stock en todos los items
+            const itemsActualizados = itemsMovimiento.map(item => ({
+                ...item,
+                needsStockUpdate: true // Flag para forzar actualización
+            }));
+            setItemsMovimiento(itemsActualizados);
+        }
+    }, [movimientoData.Origen_Bodega_Id, movimientoData.Destino_Bodega_Id, tipo]);
+
     const cargarDatosIniciales = async () => {
         try {
             setIsLoading(true);
-            const [bodegasResponse, itemsResponse] = await Promise.all([
-                bodegaService.getAllBodegas(),
-                itemService.getAllItems()
-            ]);
-
+            const bodegasResponse = await bodegaService.getAllBodegas();
             const bodegas = bodegasResponse.data || [];
             setBodegas(bodegas);
-            
-            const rawItems = itemsResponse.data || [];
-            const itemsValidos = rawItems.filter(item => 
-                item && item.Item_Id && (item.Item_Codigo_SKU || item.Item_Nombre)
-            ).map(item => ({
-                ...item,
-                Item_Codigo: item.Item_Codigo_SKU || item.Item_Id.toString(),
-                Item_Descripcion: item.Item_Nombre
-            }));
-            setItems(itemsValidos);
         } catch (error) {
             console.error('Error cargando datos:', error);
             toast.error('Error cargando datos iniciales');
@@ -203,23 +198,46 @@ const CrearMovimiento = () => {
         }
     };
 
-    const agregarItem = () => {
-        setItemsMovimiento([...itemsMovimiento, { Item_Id: '', Cantidad: '' }]);
+    // Funciones para manejar items con los nuevos componentes
+    const handleItemAdd = (producto) => {
+        const nuevoItem = {
+            Item_Id: producto.Item_Id,
+            Item_Codigo: producto.Item_Codigo,
+            Item_Descripcion: producto.Item_Descripcion,
+            Stock_Actual: producto.Stock_Actual,
+            UnidadMedida_Prefijo: producto.UnidadMedida_Prefijo || 'Und',
+            Cantidad: producto.Cantidad || ''
+        };
+        
+        setItemsMovimiento([...itemsMovimiento, nuevoItem]);
     };
 
-    const eliminarItem = (index) => {
-        if (itemsMovimiento.length > 1) {
-            setItemsMovimiento(itemsMovimiento.filter((_, i) => i !== index));
-        }
+    const handleItemUpdate = (itemId, cantidad, stockActual) => {
+        const nuevosItems = itemsMovimiento.map(item => {
+            if (item.Item_Id === itemId) {
+                return {
+                    ...item,
+                    Cantidad: cantidad,
+                    Stock_Actual: stockActual
+                };
+            }
+            return item;
+        });
+        setItemsMovimiento(nuevosItems);
     };
 
-    const actualizarItem = (index, campo, valor) => {
-        const nuevosItems = [...itemsMovimiento];
-        nuevosItems[index][campo] = valor;
+    const handleItemRemove = (itemId) => {
+        const nuevosItems = itemsMovimiento.filter(item => item.Item_Id !== itemId);
         setItemsMovimiento(nuevosItems);
     };
 
     const validarFormulario = () => {
+        console.log('Validando formulario con datos:', {
+            movimientoData,
+            itemsMovimiento,
+            tipo
+        });
+        
         // Validar datos del movimiento
         if (!movimientoData.Motivo.trim()) {
             toast.error('El motivo es requerido');
@@ -276,12 +294,11 @@ const CrearMovimiento = () => {
         const destinoBodega = bodegas.find(b => b.Bodega_Id == movimientoData.Destino_Bodega_Id);
 
         const resumenItems = itemsValidos.map(item => {
-            const itemData = items.find(i => i.Item_Id == item.Item_Id);
             return {
-                codigo: itemData?.Item_Codigo || `ID-${item.Item_Id}`,
-                nombre: itemData?.Item_Descripcion || 'Item desconocido',
+                codigo: item.Item_Codigo || `ID-${item.Item_Id}`,
+                nombre: item.Item_Descripcion || 'Item desconocido',
                 cantidad: parseFloat(item.Cantidad),
-                unidad: itemData?.UnidadMedida_Prefijo || 'Und'
+                unidad: item.UnidadMedida_Prefijo || 'Und'
             };
         });
 
@@ -598,96 +615,17 @@ const CrearMovimiento = () => {
                     </div>
                 </div>
 
-                {/* Movimientos - Tabla de Items */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                    <div className="border-b border-gray-200 pb-4 mb-6">
-                        <h2 className="text-lg font-semibold text-gray-800">Movimientos</h2>
-                    </div>
-                    
-                    {/* Búsqueda */}
-                    <div className="mb-6">
-                        <div className="flex items-center border border-gray-300 rounded-lg px-4 py-3 bg-white">
-                            <FiUser className="h-5 w-5 text-gray-400 mr-3" />
-                            <input
-                                type="text"
-                                placeholder="Buscar"
-                                className="flex-1 bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Tabla de items */}
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-600 px-4 py-2">
-                            <div className="col-span-6">Items</div>
-                            <div className="col-span-2">Stock Actual</div>
-                            <div className="col-span-2">Cantidad a mover</div>
-                            <div className="col-span-2">Stock</div>
-                        </div>
-
-                        {itemsMovimiento.map((item, index) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-4">
-                                <div className="grid grid-cols-12 gap-4 items-center">
-                                    <div className="col-span-6">
-                                        <select
-                                            value={item.Item_Id}
-                                            onChange={(e) => actualizarItem(index, 'Item_Id', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Seleccionar item...</option>
-                                            {items.map(itemOption => (
-                                                <option key={itemOption.Item_Id} value={itemOption.Item_Id}>
-                                                    {itemOption.Item_Codigo} - {itemOption.Item_Descripcion}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="col-span-2 text-center">
-                                        <span className="text-gray-900 font-medium">
-                                            {item.Item_Id ? '150' : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={item.Cantidad}
-                                            onChange={(e) => actualizarItem(index, 'Cantidad', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div className="col-span-2 text-center">
-                                        <span className="text-gray-900 font-medium">
-                                            {item.Cantidad && item.Item_Id ? (150 - (parseFloat(item.Cantidad) || 0)) : '-'}
-                                        </span>
-                                    </div>
-                                </div>
-                                {itemsMovimiento.length > 1 && (
-                                    <div className="flex justify-end mt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => eliminarItem(index)}
-                                            className="text-red-600 hover:text-red-800 p-1"
-                                        >
-                                            <FiTrash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-
-                        <button
-                            type="button"
-                            onClick={agregarItem}
-                            className="w-full border-2 border-dashed border-gray-300 rounded-lg py-4 text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors flex items-center justify-center"
-                        >
-                            <FiPlus className="h-5 w-5 mr-2" />
-                            Agregar Item
-                        </button>
-                    </div>
-                </div>
+                {/* Tabla de Items Mejorada */}
+                <TablaItems
+                    items={itemsMovimiento}
+                    onItemAdd={handleItemAdd}
+                    onItemUpdate={handleItemUpdate}
+                    onItemRemove={handleItemRemove}
+                    tipoMovimiento={tipo}
+                    bodegaOrigenId={movimientoData.Origen_Bodega_Id}
+                    bodegaDestinoId={movimientoData.Destino_Bodega_Id}
+                    loading={isLoading}
+                />
 
                 {/* Botón de envío */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
