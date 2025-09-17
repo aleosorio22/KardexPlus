@@ -7,27 +7,34 @@ import {
 import { bodegaService } from '../services/bodegaService';
 import { itemService } from '../services/itemService';
 import { movimientoService } from '../services/movimientoService';
+import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import toast from 'react-hot-toast';
 
 const CrearMovimiento = () => {
     const navigate = useNavigate();
     const { tipo } = useParams(); // entrada, salida, transferencia, ajuste
+    const { user } = useAuth(); // Obtener usuario logueado
     
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setSaving] = useState(false);
     const [bodegas, setBodegas] = useState([]);
     const [items, setItems] = useState([]);
-    const [error, setError] = useState('');
     
     // Estados para modal de confirmación
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmModalConfig, setConfirmModalConfig] = useState({});
     
-    // Datos del movimiento
+    // Obtener nombre completo del usuario logueado
+    const usuarioLogueado = user?.Usuario_Nombre ? 
+        `${user.Usuario_Nombre} ${user.Usuario_Apellido || ''}`.trim() : 
+        'Usuario';
+    
+    // Datos del movimiento - Usuario_Id se maneja automáticamente en el backend
     const [movimientoData, setMovimientoData] = useState({
-        Recepcionista: '',
+        Recepcionista: '', // Campo modificable para quien recibe/entrega
         Motivo: '',
-        Observaciones: '',
+        Observaciones: '', // Campo para observaciones generales
         Origen_Bodega_Id: '',
         Destino_Bodega_Id: ''
     });
@@ -79,9 +86,94 @@ const CrearMovimiento = () => {
     const tipoInfo = getTipoInfo(tipo);
     const IconoTipo = tipoInfo.icono;
 
+    // Función para obtener la configuración de campos según el tipo de movimiento
+    const getCamposSegunTipo = (tipo) => {
+        switch (tipo) {
+            case 'entrada':
+                return {
+                    mostrarRecepcionista: true,
+                    etiquetaRecepcionista: 'Proveedor/Origen',
+                    placeholderRecepcionista: 'Nombre del proveedor o quien entrega',
+                    soloLecturaRecepcionista: false,
+                    mostrarObservaciones: true,
+                    etiquetaObservaciones: 'Observaciones Adicionales',
+                    placeholderObservaciones: 'Observaciones del ingreso...'
+                };
+            case 'salida':
+                return {
+                    mostrarRecepcionista: true,
+                    etiquetaRecepcionista: 'Cliente/Destino',
+                    placeholderRecepcionista: 'Nombre del cliente o quien recibe',
+                    soloLecturaRecepcionista: false,
+                    mostrarObservaciones: true,
+                    etiquetaObservaciones: 'Observaciones Adicionales',
+                    placeholderObservaciones: 'Observaciones de la salida...'
+                };
+            case 'transferencia':
+                return {
+                    mostrarRecepcionista: true,
+                    etiquetaRecepcionista: 'Responsable de Recepción',
+                    placeholderRecepcionista: 'Quien recibe en bodega destino',
+                    soloLecturaRecepcionista: false,
+                    mostrarObservaciones: true,
+                    etiquetaObservaciones: 'Observaciones de Transferencia',
+                    placeholderObservaciones: 'Observaciones de la transferencia...'
+                };
+            case 'ajuste':
+                return {
+                    mostrarRecepcionista: true,
+                    etiquetaRecepcionista: 'Responsable del Ajuste',
+                    placeholderRecepcionista: usuarioLogueado,
+                    soloLecturaRecepcionista: true,
+                    mostrarObservaciones: true,
+                    etiquetaObservaciones: 'Motivo del Ajuste',
+                    placeholderObservaciones: 'Explique el motivo del ajuste de inventario...'
+                };
+            default:
+                return {
+                    mostrarRecepcionista: true,
+                    etiquetaRecepcionista: 'Recepcionista',
+                    placeholderRecepcionista: 'Nombre del responsable',
+                    soloLecturaRecepcionista: false,
+                    mostrarObservaciones: true,
+                    etiquetaObservaciones: 'Observaciones',
+                    placeholderObservaciones: 'Observaciones adicionales...'
+                };
+        }
+    };
+
+    const camposConfig = getCamposSegunTipo(tipo);
+
     useEffect(() => {
         cargarDatosIniciales();
     }, []);
+
+    // Actualizar campos cuando cambie el usuario o tipo
+    useEffect(() => {
+        if (user && tipo) {
+            const nombreCompleto = user.Usuario_Nombre ? 
+                `${user.Usuario_Nombre} ${user.Usuario_Apellido || ''}`.trim() : 
+                'Usuario';
+            
+            // Actualizar campos según el tipo de movimiento
+            setMovimientoData(prev => {
+                const nuevoData = { ...prev };
+                
+                // Solo para ajustes: el usuario logueado es el responsable
+                if (tipo === 'ajuste') {
+                    nuevoData.Recepcionista = nombreCompleto;
+                } else {
+                    // Para otros tipos, limpiar el campo para que se pueda llenar manualmente
+                    nuevoData.Recepcionista = '';
+                }
+                
+                // Limpiar observaciones al cambiar tipo
+                nuevoData.Observaciones = '';
+                
+                return nuevoData;
+            });
+        }
+    }, [user, tipo]);
 
     const cargarDatosIniciales = async () => {
         try {
@@ -105,7 +197,7 @@ const CrearMovimiento = () => {
             setItems(itemsValidos);
         } catch (error) {
             console.error('Error cargando datos:', error);
-            setError('Error cargando datos iniciales');
+            toast.error('Error cargando datos iniciales');
         } finally {
             setIsLoading(false);
         }
@@ -130,27 +222,27 @@ const CrearMovimiento = () => {
     const validarFormulario = () => {
         // Validar datos del movimiento
         if (!movimientoData.Motivo.trim()) {
-            setError('El motivo es requerido');
+            toast.error('El motivo es requerido');
             return false;
         }
 
         // Validaciones específicas por tipo
         if (tipo === 'salida' || tipo === 'transferencia') {
             if (!movimientoData.Origen_Bodega_Id) {
-                setError('La bodega de origen es requerida');
+                toast.error('La bodega de origen es requerida');
                 return false;
             }
         }
 
         if (tipo === 'entrada' || tipo === 'transferencia' || tipo === 'ajuste') {
             if (!movimientoData.Destino_Bodega_Id) {
-                setError('La bodega de destino es requerida');
+                toast.error('La bodega de destino es requerida');
                 return false;
             }
         }
 
         if (tipo === 'transferencia' && movimientoData.Origen_Bodega_Id === movimientoData.Destino_Bodega_Id) {
-            setError('Las bodegas de origen y destino deben ser diferentes');
+            toast.error('Las bodegas de origen y destino deben ser diferentes');
             return false;
         }
 
@@ -160,7 +252,7 @@ const CrearMovimiento = () => {
         );
 
         if (itemsValidos.length === 0) {
-            setError('Debe agregar al menos un item válido');
+            toast.error('Debe agregar al menos un item válido');
             return false;
         }
 
@@ -168,7 +260,6 @@ const CrearMovimiento = () => {
     };
 
     const mostrarResumenConfirmacion = () => {
-        setError('');
 
         if (!validarFormulario()) {
             return;
@@ -226,14 +317,18 @@ const CrearMovimiento = () => {
 
                         {/* Información adicional */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <span className="text-sm font-medium text-gray-600">Quien Entrega</span>
-                                <p className="text-sm text-gray-900">{movimientoData.Recepcionista || 'Usuario'}</p>
-                            </div>
-                            <div>
-                                <span className="text-sm font-medium text-gray-600">Quien Recibe</span>
-                                <p className="text-sm text-gray-900">{movimientoData.Observaciones || 'Usuario'}</p>
-                            </div>
+                            {camposConfig.mostrarRecepcionista && movimientoData.Recepcionista && (
+                                <div>
+                                    <span className="text-sm font-medium text-gray-600">{camposConfig.etiquetaRecepcionista}</span>
+                                    <p className="text-sm text-gray-900">{movimientoData.Recepcionista}</p>
+                                </div>
+                            )}
+                            {camposConfig.mostrarObservaciones && movimientoData.Observaciones && (
+                                <div>
+                                    <span className="text-sm font-medium text-gray-600">{camposConfig.etiquetaObservaciones}</span>
+                                    <p className="text-sm text-gray-900">{movimientoData.Observaciones}</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Items */}
@@ -302,17 +397,13 @@ const CrearMovimiento = () => {
                     throw new Error('Tipo de movimiento no válido');
             }
 
-            // Regresar a la página de movimientos con mensaje de éxito
-            navigate('/bodegas/movimientos', { 
-                state: { 
-                    message: `${tipoInfo.titulo} creada exitosamente`,
-                    type: 'success'
-                }
-            });
+            // Mostrar toast de éxito y regresar a la página de movimientos
+            toast.success(`${tipoInfo.titulo} creada exitosamente`);
+            navigate('/bodegas/movimientos');
             
         } catch (error) {
             console.error('Error creando movimiento:', error);
-            setError(error.message || 'Error creando el movimiento');
+            toast.error(error.message || 'Error creando el movimiento');
             setSaving(false);
         }
     };
@@ -356,12 +447,6 @@ const CrearMovimiento = () => {
                 </div>
             </div>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-800">{error}</p>
-                </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Información General */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
@@ -371,6 +456,13 @@ const CrearMovimiento = () => {
                             Movimientos de Inventario
                         </h2>
                         <p className="text-gray-600 mt-1">Registra y controla cualquier cambio que se haga en el inventario.</p>
+                        
+                        {/* Información del tipo de movimiento */}
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                                <strong>Tipo de movimiento:</strong> {tipoInfo.titulo} - Los campos se adaptan automáticamente según el tipo seleccionado.
+                            </p>
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Bodegas */}
@@ -469,30 +561,38 @@ const CrearMovimiento = () => {
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Quien Entrega
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={movimientoData.Recepcionista}
-                                        onChange={(e) => setMovimientoData({...movimientoData, Recepcionista: e.target.value})}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Usuario"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Quien Recibe
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={movimientoData.Observaciones}
-                                        onChange={(e) => setMovimientoData({...movimientoData, Observaciones: e.target.value})}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Usuario"
-                                    />
-                                </div>
+                                {camposConfig.mostrarRecepcionista && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            {camposConfig.etiquetaRecepcionista} {camposConfig.soloLecturaRecepcionista ? '' : '*'}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={movimientoData.Recepcionista}
+                                            onChange={(e) => !camposConfig.soloLecturaRecepcionista && setMovimientoData({...movimientoData, Recepcionista: e.target.value})}
+                                            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                                camposConfig.soloLecturaRecepcionista ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : ''
+                                            }`}
+                                            placeholder={camposConfig.placeholderRecepcionista}
+                                            readOnly={camposConfig.soloLecturaRecepcionista}
+                                        />
+                                    </div>
+                                )}
+                                
+                                {camposConfig.mostrarObservaciones && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            {camposConfig.etiquetaObservaciones}
+                                        </label>
+                                        <textarea
+                                            value={movimientoData.Observaciones}
+                                            onChange={(e) => setMovimientoData({...movimientoData, Observaciones: e.target.value})}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder={camposConfig.placeholderObservaciones}
+                                            rows="3"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
