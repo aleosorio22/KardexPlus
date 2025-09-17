@@ -29,8 +29,6 @@ const Items = () => {
     Item_Codigo_Barra: '',
     Item_Nombre: '',
     Item_Costo_Unitario: '',
-    Item_Stock_Min: '',
-    Item_Stock_Max: '',
     Item_Estado: true,
     CategoriaItem_Id: '',
     UnidadMedidaBase_Id: ''
@@ -153,22 +151,7 @@ const Items = () => {
         </div>
       )
     },
-    {
-      field: 'stock',
-      header: 'Stock',
-      render: (item) => (
-        <div className="space-y-1">
-          <div className="text-sm">
-            <span className="font-medium text-gray-600">Min:</span> {item.Item_Stock_Min || 0}
-          </div>
-          {item.Item_Stock_Max && (
-            <div className="text-xs text-gray-500">
-              <span className="font-medium">Max:</span> {item.Item_Stock_Max}
-            </div>
-          )}
-        </div>
-      )
-    },
+
     {
       field: 'Item_Estado',
       header: 'Estado',
@@ -224,11 +207,9 @@ const Items = () => {
       Item_Codigo_Barra: '',
       Item_Nombre: '',
       Item_Costo_Unitario: '',
-      Item_Precio_Sugerido: '',
-      Item_Stock_Min: '',
-      Item_Stock_Max: '',
       Item_Estado: true,
-      CategoriaItem_Id: ''
+      CategoriaItem_Id: '',
+      UnidadMedidaBase_Id: ''
     });
     setIsModalOpen(true);
   };
@@ -249,8 +230,6 @@ const Items = () => {
       Item_Codigo_Barra: '',
       Item_Nombre: '',
       Item_Costo_Unitario: '',
-      Item_Stock_Min: '',
-      Item_Stock_Max: '',
       Item_Estado: true,
       CategoriaItem_Id: '',
       UnidadMedidaBase_Id: ''
@@ -268,8 +247,6 @@ const Items = () => {
           Item_Codigo_Barra: data.Item_Codigo_Barra || null,
           Item_Nombre: data.Item_Nombre,
           Item_Costo_Unitario: parseFloat(data.Item_Costo_Unitario),
-          Item_Stock_Min: data.Item_Stock_Min ? parseInt(data.Item_Stock_Min) : 0,
-          Item_Stock_Max: data.Item_Stock_Max ? parseInt(data.Item_Stock_Max) : null,
           Item_Estado: Boolean(data.Item_Estado),
           CategoriaItem_Id: parseInt(data.CategoriaItem_Id),
           UnidadMedidaBase_Id: parseInt(data.UnidadMedidaBase_Id)
@@ -281,8 +258,6 @@ const Items = () => {
           Item_Codigo_Barra: data.Item_Codigo_Barra || null,
           Item_Nombre: data.Item_Nombre,
           Item_Costo_Unitario: parseFloat(data.Item_Costo_Unitario),
-          Item_Stock_Min: data.Item_Stock_Min ? parseInt(data.Item_Stock_Min) : 0,
-          Item_Stock_Max: data.Item_Stock_Max ? parseInt(data.Item_Stock_Max) : null,
           Item_Estado: Boolean(data.Item_Estado),
           CategoriaItem_Id: parseInt(data.CategoriaItem_Id),
           UnidadMedidaBase_Id: parseInt(data.UnidadMedidaBase_Id)

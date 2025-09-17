@@ -168,6 +168,16 @@ exports.createItem = async (req, res) => {
             });
         }
 
+        // Validar que Item_Stock_Max sea mayor que Item_Stock_Min si se proporciona
+        if (Item_Stock_Max !== undefined && Item_Stock_Max !== null && 
+            Item_Stock_Min !== undefined && Item_Stock_Min !== null &&
+            parseInt(Item_Stock_Max) < parseInt(Item_Stock_Min)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El stock máximo debe ser mayor o igual al stock mínimo'
+            });
+        }
+
         const itemData = {
             Item_Codigo_SKU: Item_Codigo_SKU ? Item_Codigo_SKU.trim() : null,
             Item_Codigo_Barra: Item_Codigo_Barra ? Item_Codigo_Barra.trim() : null,
@@ -220,6 +230,8 @@ exports.updateItem = async (req, res) => {
             Item_Codigo_Barra,
             Item_Nombre,
             Item_Costo_Unitario,
+            Item_Stock_Min,
+            Item_Stock_Max,
             Item_Estado,
             CategoriaItem_Id,
             UnidadMedidaBase_Id
@@ -294,11 +306,23 @@ exports.updateItem = async (req, res) => {
             });
         }
 
+        // Validar que Item_Stock_Max sea mayor que Item_Stock_Min si se proporciona
+        if (Item_Stock_Max !== undefined && Item_Stock_Max !== null && 
+            Item_Stock_Min !== undefined && Item_Stock_Min !== null &&
+            parseInt(Item_Stock_Max) < parseInt(Item_Stock_Min)) {
+            return res.status(400).json({
+                success: false,
+                message: 'El stock máximo debe ser mayor o igual al stock mínimo'
+            });
+        }
+
         const itemData = {
             Item_Codigo_SKU: Item_Codigo_SKU ? Item_Codigo_SKU.trim() : null,
             Item_Codigo_Barra: Item_Codigo_Barra ? Item_Codigo_Barra.trim() : null,
             Item_Nombre: Item_Nombre.trim(),
             Item_Costo_Unitario: parseFloat(Item_Costo_Unitario),
+            Item_Stock_Min: Item_Stock_Min ? parseInt(Item_Stock_Min) : 0,
+            Item_Stock_Max: Item_Stock_Max ? parseInt(Item_Stock_Max) : null,
             Item_Estado: Item_Estado !== undefined ? Boolean(Item_Estado) : true,
             CategoriaItem_Id: parseInt(CategoriaItem_Id),
             UnidadMedidaBase_Id: parseInt(UnidadMedidaBase_Id)

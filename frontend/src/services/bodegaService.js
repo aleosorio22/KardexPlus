@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3499/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -151,4 +151,5 @@ const bodegaService = {
   }
 };
 
+export { bodegaService };
 export default bodegaService;
