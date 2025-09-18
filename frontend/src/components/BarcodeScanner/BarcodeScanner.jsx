@@ -228,12 +228,17 @@ const BarcodeScanner = ({
     return (
         <div className="fixed inset-0 z-50 bg-black">
             {/* Header con controles */}
-            <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4">
+            <div className="absolute top-0 left-0 right-0 z-10 bg-black/80 backdrop-blur-sm p-4 border-b border-white/20">
                 <div className="flex items-center justify-between text-white">
                     <div className="flex items-center space-x-4">
                         {/* Botón cerrar */}
                         <button
-                            onClick={handleClose}
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleClose();
+                            }}
                             className="p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors touch-manipulation"
                         >
                             <FiX className="h-6 w-6" />
@@ -249,7 +254,12 @@ const BarcodeScanner = ({
                         {/* Control de flash */}
                         {hasFlash && (
                             <button
-                                onClick={toggleFlash}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleFlash();
+                                }}
                                 className={`p-2 rounded-full transition-colors touch-manipulation ${
                                     flashEnabled 
                                         ? 'bg-yellow-500 hover:bg-yellow-600' 
@@ -267,7 +277,12 @@ const BarcodeScanner = ({
                         {/* Cambiar cámara */}
                         {cameraDevices.length > 1 && (
                             <button
-                                onClick={switchCamera}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    switchCamera();
+                                }}
                                 className="p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors touch-manipulation"
                             >
                                 <FiRotateCcw className="h-5 w-5" />
@@ -285,7 +300,12 @@ const BarcodeScanner = ({
                         <h3 className="text-xl font-semibold mb-2">Error de Cámara</h3>
                         <p className="text-gray-300 mb-6">{error}</p>
                         <button
-                            onClick={initializeScanner}
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                initializeScanner();
+                            }}
                             className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors"
                         >
                             Intentar de nuevo
@@ -304,51 +324,59 @@ const BarcodeScanner = ({
 
                         {/* Overlay de escaneo */}
                         <div className="absolute inset-0 pointer-events-none">
+                            {/* Oscurecimiento del fondo */}
+                            <div className="absolute inset-0 bg-black/40"></div>
+                            
                             {/* Zona de escaneo */}
                             <div className="absolute inset-0 flex items-center justify-center">
                                 <div className="relative">
-                                    {/* Marco de escaneo */}
-                                    <div className="w-64 h-40 sm:w-80 sm:h-48 border-2 border-white rounded-lg relative">
-                                        {/* Esquinas del marco */}
-                                        <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-blue-500 rounded-tl"></div>
-                                        <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-blue-500 rounded-tr"></div>
-                                        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-blue-500 rounded-bl"></div>
-                                        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-blue-500 rounded-br"></div>
+                                    {/* Marco de escaneo - área transparente */}
+                                    <div className="w-72 h-44 sm:w-80 sm:h-48 bg-transparent border-2 border-white/80 rounded-lg relative backdrop-blur-none">
+                                        {/* Esquinas del marco más visibles */}
+                                        <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-lg"></div>
+                                        <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-400 rounded-tr-lg"></div>
+                                        <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-400 rounded-bl-lg"></div>
+                                        <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-lg"></div>
                                         
-                                        {/* Línea de escaneo animada */}
-                                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-red-500 animate-pulse"></div>
+                                        {/* Línea de escaneo animada más sutil */}
+                                        <div className="absolute top-1/2 left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-red-400 to-transparent animate-pulse"></div>
+                                    </div>
+                                    
+                                    {/* Máscara para crear el efecto de "recorte" */}
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        {/* Top */}
+                                        <div className="absolute top-0 left-0 right-0 bg-black/60" style={{ height: 'calc(50% - 88px)' }}></div>
+                                        {/* Bottom */}
+                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60" style={{ height: 'calc(50% - 88px)' }}></div>
+                                        {/* Left */}
+                                        <div className="absolute left-0 bg-black/60" style={{ top: 'calc(50% - 88px)', bottom: 'calc(50% - 88px)', width: 'calc(50% - 144px)' }}></div>
+                                        {/* Right */}
+                                        <div className="absolute right-0 bg-black/60" style={{ top: 'calc(50% - 88px)', bottom: 'calc(50% - 88px)', width: 'calc(50% - 144px)' }}></div>
                                     </div>
                                     
                                     {/* Texto instructivo */}
-                                    <div className="text-center mt-4 text-white">
-                                        <p className="text-sm font-medium">Centra el código en el marco</p>
-                                        <p className="text-xs text-gray-300 mt-1">La detección es automática</p>
+                                    <div className="text-center mt-6 text-white">
+                                        <p className="text-base font-medium">Centra el código en el marco</p>
+                                        <p className="text-sm text-gray-300 mt-1">La detección es automática</p>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Overlay oscuro para enfocar */}
-                            <div 
-                                className="absolute inset-0 bg-black bg-opacity-50"
-                                style={{
-                                    clipPath: 'polygon(0% 0%, 0% 100%, 50% 100%, 50% 70%, 80% 70%, 80% 30%, 50% 30%, 50% 0%)'
-                                }}
-                            />
                         </div>
                     </>
                 )}
             </div>
 
             {/* Footer con información */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            {/* Footer con información */}
+            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm p-4 border-t border-white/20">
                 <div className="text-center text-white">
-                    <p className="text-sm text-gray-300">
-                        Soporta: EAN-13, EAN-8, UPC-A, Code128 y más
+                    <p className="text-sm text-gray-300 mb-2">
+                        <strong>Soporta:</strong> EAN-13, EAN-8, UPC-A, Code128 y más
                     </p>
                     {isScanning && (
-                        <div className="flex items-center justify-center mt-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                            <span className="text-sm">Buscando códigos...</span>
+                        <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent mr-2"></div>
+                            <span className="text-sm text-blue-300">Buscando códigos...</span>
                         </div>
                     )}
                 </div>

@@ -195,7 +195,12 @@ const SearchProducto = ({
         }
     };
 
-    const clearSearch = () => {
+    const clearSearch = (e) => {
+        // Prevenir cualquier comportamiento por defecto del formulario
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setSearchTerm('');
         setShowResults(false);
         setSelectedIndex(-1);
@@ -212,7 +217,7 @@ const SearchProducto = ({
         // Buscar automáticamente el producto
         const productoEncontrado = productos.find(p => 
             p.Item_Codigo_SKU === codigoEscaneado ||
-            p.Item_Codigo_Barras === codigoEscaneado ||
+            p.Item_Codigo_Barra === codigoEscaneado ||
             p.Item_Id?.toString() === codigoEscaneado
         );
 
@@ -228,7 +233,12 @@ const SearchProducto = ({
         }
     };
 
-    const openScanner = () => {
+    const openScanner = (e) => {
+        // Prevenir cualquier comportamiento por defecto del formulario
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         setIsScannerOpen(true);
     };
 
@@ -277,29 +287,26 @@ const SearchProducto = ({
                 <div className="absolute inset-y-0 right-0 flex items-center space-x-1 pr-2">
                     {/* Botón scanner de código de barras */}
                     <button
-                        onClick={openScanner}
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openScanner(e);
+                        }}
                         className="p-1.5 text-gray-500 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                         title="Escanear código de barras"
                     >
-                        <svg 
-                            className="w-5 h-5" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                        >
-                            <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2} 
-                                d="M3 7v4a1 1 0 001 1h4m0-6L6 4a1 1 0 00-1 1v2m14 0V5a1 1 0 00-1-1l-2 2m4 6v4a1 1 0 01-1 1h-4m-4-8v8m-2-8v8m-2-8v8" 
-                            />
-                        </svg>
+                        <FiCamera className="h-5 w-5" />
                     </button>
 
                     {/* Botón limpiar */}
                     {searchTerm && (
                         <button
-                            onClick={clearSearch}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                clearSearch(e);
+                            }}
                             className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             type="button"
                             title="Limpiar búsqueda"
