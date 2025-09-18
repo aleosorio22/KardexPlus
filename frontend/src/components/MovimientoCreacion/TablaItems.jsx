@@ -101,13 +101,14 @@ const TablaItems = ({
     const headers = getHeaderLabels();
 
     return (
-        <div className="space-y-6">
-            {/* Buscador de productos */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <FiPlus className="mr-2" />
-                    Agregar Productos
-                </h3>
+        <div className="space-y-4 sm:space-y-6">
+            {/* Buscador de productos - Mobile optimized */}
+            <div className="bg-white rounded-lg border border-gray-200">
+                <div className="p-4 sm:p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <FiPlus className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                        <span className="leading-tight">Agregar Productos</span>
+                    </h3>
                 
                 <SearchProducto
                     onProductSelected={handleProductSelected}
@@ -117,77 +118,79 @@ const TablaItems = ({
                     itemsYaSeleccionados={items}
                 />
                 
-                {/* Información contextual */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                        <FiPackage className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-blue-800">
-                            <p className="font-medium">Consejos para búsqueda:</p>
-                            <ul className="mt-1 space-y-1">
-                                <li>• Escribe el nombre, SKU o código de barras del producto</li>
-                                <li>• Pega un código escaneado para selección automática</li>
-                                <li>• Usa las flechas ↑↓ para navegar y Enter para seleccionar</li>
-                            </ul>
+                    {/* Información contextual - Mobile optimized */}
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                            <FiPackage className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs sm:text-sm text-blue-800">
+                                <p className="font-medium">Consejos para búsqueda:</p>
+                                <ul className="mt-1 space-y-1 leading-relaxed">
+                                    <li>• Escribe el nombre, SKU o código de barras</li>
+                                    <li className="hidden sm:list-item">• Pega un código escaneado para selección automática</li>
+                                    <li className="hidden sm:list-item">• Usa las flechas ↑↓ para navegar y Enter para seleccionar</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Tabla de items seleccionados */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <FiPackage className="mr-2" />
-                        Items Seleccionados ({items.length})
-                    </h3>
-                    
-                    {items.length > 0 && (
-                        <div className="text-sm text-gray-600">
-                            Total: {getTotalCantidad().toFixed(2)} unidades
-                        </div>
-                    )}
-                </div>
-
-                {/* Validaciones */}
-                {items.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                        {validation.errors.length > 0 && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <div className="flex items-start space-x-2">
-                                    <FiAlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="text-sm font-medium text-red-800">Errores encontrados:</p>
-                                        <ul className="text-sm text-red-700 mt-1">
-                                            {validation.errors.map((error, index) => (
-                                                <li key={index}>• {error}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+            {/* Tabla de items seleccionados - Mobile optimized */}
+            <div className="bg-white rounded-lg border border-gray-200">
+                <div className="p-4 sm:p-6">
+                    <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:items-center sm:justify-between mb-4 sm:mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                            <FiPackage className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                            <span className="leading-tight">Items Seleccionados ({items.length})</span>
+                        </h3>
                         
-                        {validation.warnings.length > 0 && (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                <div className="flex items-start space-x-2">
-                                    <FiAlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="text-sm font-medium text-yellow-800">Advertencias:</p>
-                                        <ul className="text-sm text-yellow-700 mt-1">
-                                            {validation.warnings.map((warning, index) => (
-                                                <li key={index}>• {warning}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
+                        {items.length > 0 && (
+                            <div className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full sm:bg-transparent sm:px-0 sm:py-0">
+                                Total: {getTotalCantidad().toFixed(2)} unidades
                             </div>
                         )}
                     </div>
-                )}
 
-                {/* Headers de la tabla */}
+                    {/* Validaciones - Mobile optimized */}
+                    {items.length > 0 && (
+                        <div className="mb-4 space-y-2">
+                            {validation.errors.length > 0 && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                    <div className="flex items-start space-x-2">
+                                        <FiAlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs sm:text-sm font-medium text-red-800">Errores encontrados:</p>
+                                            <ul className="text-xs sm:text-sm text-red-700 mt-1 space-y-0.5">
+                                                {validation.errors.map((error, index) => (
+                                                    <li key={index} className="leading-tight">• {error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {validation.warnings.length > 0 && (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <div className="flex items-start space-x-2">
+                                        <FiAlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs sm:text-sm font-medium text-yellow-800">Advertencias:</p>
+                                            <ul className="text-xs sm:text-sm text-yellow-700 mt-1 space-y-0.5">
+                                                {validation.warnings.map((warning, index) => (
+                                                    <li key={index} className="leading-tight">• {warning}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                {/* Headers de tabla - Solo desktop */}
                 {items.length > 0 && (
-                    <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-600 px-4 py-2 border-b border-gray-200 mb-4">
+                    <div className="hidden lg:grid lg:grid-cols-12 gap-4 text-sm font-medium text-gray-600 px-4 py-2 border-b border-gray-200 mb-4">
                         <div className="col-span-6">Producto</div>
                         <div className="col-span-2 text-center">{headers.stock}</div>
                         <div className="col-span-2 text-center">{headers.cantidad}</div>
@@ -196,69 +199,70 @@ const TablaItems = ({
                     </div>
                 )}
 
-                {/* Lista de items */}
-                <div className="space-y-3">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                            <p className="ml-3 text-gray-600">Cargando items...</p>
-                        </div>
-                    ) : items.length > 0 ? (
-                        items.map((item) => (
-                            <ItemSelector
-                                key={item.Item_Id}
-                                producto={item}
-                                onCantidadChange={handleCantidadChange}
-                                onRemove={onItemRemove}
-                                tipoMovimiento={tipoMovimiento}
-                                bodegaOrigenId={bodegaOrigenId}
-                                bodegaDestinoId={bodegaDestinoId}
-                            />
-                        ))
-                    ) : (
-                        <div className="text-center py-12">
-                            <FiPackage className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <h4 className="text-lg font-medium text-gray-900 mb-2">
-                                No hay productos seleccionados
-                            </h4>
-                            <p className="text-gray-600">
-                                Usa el buscador de arriba para agregar productos a este {tipoMovimiento}
-                            </p>
+                    {/* Lista de items - Mobile optimized */}
+                    <div className="space-y-3 sm:space-y-4">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+                                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-2 border-blue-500 border-t-transparent"></div>
+                                <p className="mt-3 text-sm sm:text-base text-gray-600">Cargando items...</p>
+                            </div>
+                        ) : items.length > 0 ? (
+                            items.map((item) => (
+                                <ItemSelector
+                                    key={item.Item_Id}
+                                    producto={item}
+                                    onCantidadChange={handleCantidadChange}
+                                    onRemove={onItemRemove}
+                                    tipoMovimiento={tipoMovimiento}
+                                    bodegaOrigenId={bodegaOrigenId}
+                                    bodegaDestinoId={bodegaDestinoId}
+                                />
+                            ))
+                        ) : (
+                            <div className="text-center py-8 sm:py-12 px-4">
+                                <FiPackage className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                                <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
+                                    No hay productos seleccionados
+                                </h4>
+                                <p className="text-sm sm:text-base text-gray-600 max-w-xs mx-auto leading-relaxed">
+                                    Usa el buscador de arriba para agregar productos a este {tipoMovimiento}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Resumen final - Mobile optimized */}
+                    {items.length > 0 && (
+                        <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
+                            <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Resumen</h4>
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total de items:</span>
+                                            <span className="font-medium">{items.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total unidades:</span>
+                                            <span className="font-medium">{getTotalCantidad().toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900 mb-2">Estado de validación</h4>
+                                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                                        validation.isValid 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : 'bg-red-100 text-red-800'
+                                    }`}>
+                                        {validation.isValid ? 'Listo para procesar' : 'Requiere correcciones'}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
-
-                {/* Resumen final */}
-                {items.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div>
-                                <h4 className="text-sm font-medium text-gray-900 mb-2">Resumen</h4>
-                                <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Total de items:</span>
-                                        <span className="font-medium">{items.length}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Total unidades:</span>
-                                        <span className="font-medium">{getTotalCantidad().toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h4 className="text-sm font-medium text-gray-900 mb-2">Estado de validación</h4>
-                                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                    validation.isValid 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-red-100 text-red-800'
-                                }`}>
-                                    {validation.isValid ? 'Listo para procesar' : 'Requiere correcciones'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

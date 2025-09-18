@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-    FiArrowLeft, FiPackage, FiTruck, FiArrowRight, FiEdit3, 
-    FiPlus, FiTrash2, FiSend, FiMapPin, FiUser, FiFileText, FiRefreshCw 
+    FiPackage, FiTruck, FiEdit3, FiRefreshCw 
 } from 'react-icons/fi';
 import { bodegaService } from '../services/bodegaService';
-import { itemService } from '../services/itemService';
 import { movimientoService } from '../services/movimientoService';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
-import { TablaItems } from '../components/MovimientoCreacion';
+import { 
+    TablaItems, 
+    HeaderMovimiento, 
+    FormularioMovimiento, 
+    AccionesMovimiento 
+} from '../components/MovimientoCreacion';
 import toast from 'react-hot-toast';
 
 const CrearMovimiento = () => {
@@ -42,46 +45,18 @@ const CrearMovimiento = () => {
     // Items del movimiento
     const [itemsMovimiento, setItemsMovimiento] = useState([]);
 
+    // Información del tipo de movimiento - usado para el modal de confirmación
     const getTipoInfo = (tipo) => {
         const tipos = {
-            'entrada': {
-                icono: FiPackage,
-                color: 'text-primary',
-                bgColor: 'bg-green-50',
-                borderColor: 'border-green-200',
-                titulo: 'Nueva Entrada',
-                descripcion: 'Registrar ingreso de productos al inventario'
-            },
-            'salida': {
-                icono: FiTruck,
-                color: 'text-red-600',
-                bgColor: 'bg-red-50',
-                borderColor: 'border-red-200',
-                titulo: 'Nueva Salida',
-                descripcion: 'Registrar salida de productos del inventario'
-            },
-            'transferencia': {
-                icono: FiRefreshCw,
-                color: 'text-blue-600',
-                bgColor: 'bg-blue-50',
-                borderColor: 'border-blue-200',
-                titulo: 'Nueva Transferencia',
-                descripcion: 'Transferir productos entre bodegas'
-            },
-            'ajuste': {
-                icono: FiEdit3,
-                color: 'text-yellow-600',
-                bgColor: 'bg-yellow-50',
-                borderColor: 'border-yellow-200',
-                titulo: 'Nuevo Ajuste',
-                descripcion: 'Ajustar cantidades en inventario'
-            }
+            'entrada': { titulo: 'Nueva Entrada' },
+            'salida': { titulo: 'Nueva Salida' },
+            'transferencia': { titulo: 'Nueva Transferencia' },
+            'ajuste': { titulo: 'Nuevo Ajuste' }
         };
         return tipos[tipo] || tipos['entrada'];
     };
 
     const tipoInfo = getTipoInfo(tipo);
-    const IconoTipo = tipoInfo.icono;
 
     // Función para obtener la configuración de campos según el tipo de movimiento
     const getCamposSegunTipo = (tipo) => {
@@ -209,7 +184,8 @@ const CrearMovimiento = () => {
             Cantidad: producto.Cantidad || ''
         };
         
-        setItemsMovimiento([...itemsMovimiento, nuevoItem]);
+        // Agregar al inicio de la lista (LIFO - Last In, First Out)
+        setItemsMovimiento([nuevoItem, ...itemsMovimiento]);
     };
 
     const handleItemUpdate = (itemId, cantidad, stockActual) => {
@@ -439,183 +415,23 @@ const CrearMovimiento = () => {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header de la página */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <button
-                            onClick={() => navigate('/bodegas/movimientos')}
-                            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-                        >
-                            <FiArrowLeft className="h-5 w-5 mr-2" />
-                            Regresar
-                        </button>
-                    </div>
-                </div>
-                <div className="flex items-center mt-4">
-                    <div className={`p-3 rounded-lg ${tipoInfo.bgColor} ${tipoInfo.borderColor} border mr-4`}>
-                        <IconoTipo className={`h-6 w-6 ${tipoInfo.color}`} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">{tipoInfo.titulo}</h1>
-                        <p className="text-gray-600">{tipoInfo.descripcion}</p>
-                    </div>
-                </div>
-            </div>
+        <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
+            {/* Header del movimiento */}
+            <HeaderMovimiento 
+                tipo={tipo}
+            />
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Información General */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                    <div className="border-b border-gray-200 pb-4 mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                            <FiFileText className="h-5 w-5 mr-3 text-blue-600" />
-                            Movimientos de Inventario
-                        </h2>
-                        <p className="text-gray-600 mt-1">Registra y controla cualquier cambio que se haga en el inventario.</p>
-                        
-                        {/* Información del tipo de movimiento */}
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-blue-800">
-                                <strong>Tipo de movimiento:</strong> {tipoInfo.titulo} - Los campos se adaptan automáticamente según el tipo seleccionado.
-                            </p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Bodegas */}
-                        <div className="space-y-4">
-                            {(tipo === 'salida' || tipo === 'transferencia') && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Almacén Origen *
-                                    </label>
-                                    <select
-                                        value={movimientoData.Origen_Bodega_Id}
-                                        onChange={(e) => setMovimientoData({...movimientoData, Origen_Bodega_Id: e.target.value})}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        required
-                                    >
-                                        <option value="">Seleccionar bodega...</option>
-                                        {bodegas.map(bodega => (
-                                            <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                                {bodega.Bodega_Nombre}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                {/* Formulario de información general */}
+                <FormularioMovimiento
+                    tipo={tipo}
+                    movimientoData={movimientoData}
+                    setMovimientoData={setMovimientoData}
+                    bodegas={bodegas}
+                    camposConfig={camposConfig}
+                />
 
-                            {(tipo === 'entrada' || tipo === 'transferencia' || tipo === 'ajuste') && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        {tipo === 'ajuste' ? 'Almacén *' : 'Almacén Destino *'}
-                                    </label>
-                                    <select
-                                        value={movimientoData.Destino_Bodega_Id}
-                                        onChange={(e) => setMovimientoData({...movimientoData, Destino_Bodega_Id: e.target.value})}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        required
-                                    >
-                                        <option value="">Seleccionar bodega...</option>
-                                        {bodegas.map(bodega => (
-                                            <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                                {bodega.Bodega_Nombre}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Información del movimiento */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Motivo *
-                                </label>
-                                <select
-                                    value={movimientoData.Motivo}
-                                    onChange={(e) => setMovimientoData({...movimientoData, Motivo: e.target.value})}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                >
-                                    <option value="">Seleccionar motivo...</option>
-                                    {tipo === 'entrada' && (
-                                        <>
-                                            <option value="Compra">Compra</option>
-                                            <option value="Devolución">Devolución</option>
-                                            <option value="Producción">Producción</option>
-                                            <option value="Donación">Donación</option>
-                                            <option value="Otro">Otro</option>
-                                        </>
-                                    )}
-                                    {tipo === 'salida' && (
-                                        <>
-                                            <option value="Venta">Venta</option>
-                                            <option value="Uso interno">Uso interno</option>
-                                            <option value="Pérdida/Daño">Pérdida/Daño</option>
-                                            <option value="Donación">Donación</option>
-                                            <option value="Otro">Otro</option>
-                                        </>
-                                    )}
-                                    {tipo === 'transferencia' && (
-                                        <>
-                                            <option value="Reabastecimiento">Reabastecimiento</option>
-                                            <option value="Reorganización">Reorganización</option>
-                                            <option value="Distribución">Distribución</option>
-                                            <option value="Otro">Otro</option>
-                                        </>
-                                    )}
-                                    {tipo === 'ajuste' && (
-                                        <>
-                                            <option value="Inventario físico">Inventario físico</option>
-                                            <option value="Corrección">Corrección</option>
-                                            <option value="Merma">Merma</option>
-                                            <option value="Otro">Otro</option>
-                                        </>
-                                    )}
-                                </select>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {camposConfig.mostrarRecepcionista && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            {camposConfig.etiquetaRecepcionista} {camposConfig.soloLecturaRecepcionista ? '' : '*'}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={movimientoData.Recepcionista}
-                                            onChange={(e) => !camposConfig.soloLecturaRecepcionista && setMovimientoData({...movimientoData, Recepcionista: e.target.value})}
-                                            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                                camposConfig.soloLecturaRecepcionista ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : ''
-                                            }`}
-                                            placeholder={camposConfig.placeholderRecepcionista}
-                                            readOnly={camposConfig.soloLecturaRecepcionista}
-                                        />
-                                    </div>
-                                )}
-                                
-                                {camposConfig.mostrarObservaciones && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            {camposConfig.etiquetaObservaciones}
-                                        </label>
-                                        <textarea
-                                            value={movimientoData.Observaciones}
-                                            onChange={(e) => setMovimientoData({...movimientoData, Observaciones: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder={camposConfig.placeholderObservaciones}
-                                            rows="3"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabla de Items Mejorada */}
+                {/* Tabla de Items */}
                 <TablaItems
                     items={itemsMovimiento}
                     onItemAdd={handleItemAdd}
@@ -627,36 +443,13 @@ const CrearMovimiento = () => {
                     loading={isLoading}
                 />
 
-                {/* Botón de envío */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                    <div className="flex justify-end space-x-4">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/bodegas/movimientos')}
-                            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            disabled={isSaving}
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center disabled:opacity-50"
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                    Enviando Movimiento...
-                                </>
-                            ) : (
-                                <>
-                                    <FiSend className="h-4 w-4 mr-2" />
-                                    Enviar Movimiento
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
+                {/* Acciones del formulario */}
+                <AccionesMovimiento
+                    onCancel={() => navigate('/bodegas/movimientos')}
+                    onSubmit={handleSubmit}
+                    isSaving={isSaving}
+                    tipoMovimiento={tipo}
+                />
             </form>
 
             {/* Modal de confirmación */}
