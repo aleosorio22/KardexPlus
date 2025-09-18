@@ -1,0 +1,382 @@
+/* Estilos para Ticket POS 58mm */
+.ticket-pos-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.ticket-pos-container {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    max-height: 85vh;
+    overflow-y: auto;
+    /* Simular tamaño real de ticket 58mm */
+    width: 220px; /* ~58mm en pantalla */
+    min-height: 300px;
+    border: 1px solid #e5e5e5;
+}
+
+.ticket-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ticket-close-btn:hover {
+    background: #dc2626;
+}
+
+/* Ticket POS - Formato 58mm */
+.ticket-pos {
+    width: 58mm; /* Ancho estándar del ticket */
+    min-height: 100mm;
+    max-width: 58mm;
+    background: white;
+    color: black;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 9px;
+    line-height: 1.1;
+    padding: 3mm;
+    margin: 0 auto;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Encabezado */
+.ticket-header {
+    text-align: center;
+    margin-bottom: 2mm;
+}
+
+.company-name {
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 1mm;
+}
+
+.company-subtitle {
+    font-size: 8px;
+    margin-top: 0.5mm;
+}
+
+.document-type {
+    font-size: 9px;
+    font-weight: bold;
+    margin: 1.5mm 0;
+}
+
+.separator {
+    font-size: 7px;
+    text-align: center;
+    margin: 0.5mm 0;
+    font-weight: normal;
+    letter-spacing: 0px;
+}
+
+/* Información del comprobante */
+.ticket-info {
+    margin-bottom: 3mm;
+}
+
+.info-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1mm;
+    font-size: 9px;
+}
+
+.info-line .label {
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.info-line .value {
+    text-align: right;
+    word-break: break-word;
+    flex: 1;
+    margin-left: 2mm;
+}
+
+/* Items */
+.ticket-items {
+    margin-bottom: 3mm;
+}
+
+.items-header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    margin-bottom: 2mm;
+}
+
+.item {
+    margin-bottom: 2mm;
+    border-bottom: 1px dotted #ccc;
+    padding-bottom: 1mm;
+}
+
+.item:last-child {
+    border-bottom: none;
+}
+
+.item-name {
+    font-weight: bold;
+    font-size: 9px;
+    margin-bottom: 0.5mm;
+    word-wrap: break-word;
+}
+
+.item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: #666;
+    margin-bottom: 0.5mm;
+}
+
+.item-quantity {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    margin-bottom: 0.5mm;
+}
+
+.qty {
+    font-weight: bold;
+}
+
+.price {
+    font-weight: bold;
+}
+
+.item-subtotal {
+    text-align: right;
+    font-size: 9px;
+    font-weight: bold;
+    margin-bottom: 0.5mm;
+}
+
+.item-separator {
+    text-align: center;
+    font-size: 8px;
+    color: #999;
+    margin: 1mm 0;
+}
+
+/* Totales */
+.ticket-totals {
+    margin-bottom: 3mm;
+}
+
+.total-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1mm;
+    font-size: 9px;
+}
+
+.total-final {
+    font-weight: bold;
+    font-size: 10px;
+    border-top: 1px solid #000;
+    padding-top: 1mm;
+    margin-top: 2mm;
+}
+
+.total-final .label,
+.total-final .value {
+    font-weight: bold;
+}
+
+/* Observaciones */
+.ticket-observations {
+    margin-bottom: 3mm;
+}
+
+.obs-title {
+    font-weight: bold;
+    font-size: 9px;
+    margin-bottom: 1mm;
+}
+
+.obs-content {
+    font-size: 8px;
+    line-height: 1.3;
+    word-wrap: break-word;
+}
+
+/* Pie */
+.ticket-footer {
+    text-align: center;
+    font-size: 8px;
+    line-height: 1.3;
+}
+
+.footer-line {
+    margin-bottom: 0.5mm;
+}
+
+/* Estilos de impresión */
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    body * {
+        visibility: hidden;
+    }
+    
+    .ticket-pos-overlay, 
+    .ticket-pos-overlay * {
+        visibility: visible;
+    }
+    
+    .ticket-pos-overlay {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: white !important;
+        z-index: 9999;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .ticket-pos-container {
+        box-shadow: none;
+        border-radius: 0;
+        max-height: none;
+        overflow: visible;
+        background: white;
+        width: 58mm;
+        margin: 0 auto;
+    }
+    
+    .ticket-close-btn {
+        display: none !important;
+    }
+    
+    .ticket-pos {
+        width: 58mm !important;
+        min-width: 58mm !important;
+        max-width: 58mm !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        font-size: 8px !important;
+        background: white !important;
+        color: black !important;
+    }
+    
+    /* Ajustes para impresión */
+    .separator {
+        font-size: 7px;
+    }
+    
+    .info-line,
+    .total-line {
+        font-size: 8px;
+    }
+    
+    .item-name {
+        font-size: 8px;
+    }
+    
+    .item-details {
+        font-size: 7px;
+    }
+    
+    .item-quantity {
+        font-size: 8px;
+    }
+    
+    .item-subtotal {
+        font-size: 8px;
+    }
+    
+    .company-name {
+        font-size: 11px;
+    }
+    
+    .document-type {
+        font-size: 9px;
+    }
+    
+    .items-header {
+        font-size: 9px;
+    }
+    
+    .total-final {
+        font-size: 9px;
+    }
+    
+    .obs-title {
+        font-size: 8px;
+    }
+    
+    .obs-content {
+        font-size: 7px;
+    }
+    
+    .ticket-footer {
+        font-size: 7px;
+    }
+    
+    /* Ocultar scrollbars en impresión */
+    * {
+        overflow: visible !important;
+    }
+    
+    /* Configuración de página para ticket POS */
+    @page {
+        size: 58mm auto;
+        margin: 0;
+        padding: 0;
+    }
+    
+    html, body {
+        width: 58mm;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Responsivo para pantalla */
+@media screen and (max-width: 480px) {
+    .ticket-pos-overlay {
+        padding: 10px;
+    }
+    
+    .ticket-pos {
+        width: 100%;
+        max-width: 58mm;
+        min-width: 280px;
+    }
+}

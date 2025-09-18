@@ -254,7 +254,6 @@ const CrearMovimiento = () => {
     };
 
     const mostrarResumenConfirmacion = () => {
-
         if (!validarFormulario()) {
             return;
         }
@@ -262,144 +261,24 @@ const CrearMovimiento = () => {
         // Preparar datos para el resumen
         const itemsValidos = itemsMovimiento
             .filter(item => item.Item_Id && item.Cantidad && parseFloat(item.Cantidad) > 0);
-        
-        const totalItems = itemsValidos.length;
-        const totalCantidad = itemsValidos.reduce((sum, item) => sum + parseFloat(item.Cantidad), 0);
 
-        const origenBodega = bodegas.find(b => b.Bodega_Id == movimientoData.Origen_Bodega_Id);
-        const destinoBodega = bodegas.find(b => b.Bodega_Id == movimientoData.Destino_Bodega_Id);
-
-        const resumenItems = itemsValidos.map(item => {
-            return {
-                codigo: item.Item_Codigo || `ID-${item.Item_Id}`,
-                nombre: item.Item_Descripcion || 'Item desconocido',
-                cantidad: parseFloat(item.Cantidad),
-                unidad: item.UnidadMedida_Prefijo || 'Und'
-            };
-        });
-
-        setConfirmModalConfig({
-            title: `Confirmar ${tipoInfo.titulo}`,
-            message: (
-                <div className="space-y-4 text-left">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Resumen del Movimiento</h4>
-                        
-                        {/* Bodegas */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            {origenBodega && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                    <div className="flex items-center mb-2">
-                                        <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                                        <span className="text-sm font-medium text-red-800">Almacén Origen</span>
-                                    </div>
-                                    <p className="text-sm text-red-700">{origenBodega.Bodega_Nombre}</p>
-                                </div>
-                            )}
-                            
-                            {destinoBodega && (
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                    <div className="flex items-center mb-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                        <span className="text-sm font-medium text-green-800">Almacén Destino</span>
-                                    </div>
-                                    <p className="text-sm text-green-700">{destinoBodega.Bodega_Nombre}</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Información adicional */}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            {camposConfig.mostrarRecepcionista && movimientoData.Recepcionista && (
-                                <div>
-                                    <span className="text-sm font-medium text-gray-600">{camposConfig.etiquetaRecepcionista}</span>
-                                    <p className="text-sm text-gray-900">{movimientoData.Recepcionista}</p>
-                                </div>
-                            )}
-                            {camposConfig.mostrarObservaciones && movimientoData.Observaciones && (
-                                <div>
-                                    <span className="text-sm font-medium text-gray-600">{camposConfig.etiquetaObservaciones}</span>
-                                    <p className="text-sm text-gray-900">{movimientoData.Observaciones}</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Items */}
-                        <div className="mb-4">
-                            <h5 className="text-sm font-medium text-gray-900 mb-2">Items ({totalItems})</h5>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                                {resumenItems.map((item, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-white p-2 rounded border">
-                                        <div>
-                                            <span className="text-sm font-medium text-gray-900">{item.codigo}</span>
-                                            <p className="text-xs text-gray-600">{item.nombre}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-sm font-medium">{item.cantidad}</span>
-                                            <span className="text-xs text-gray-600 ml-1">{item.unidad}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="text-center text-sm text-gray-600">
-                            Total: {totalCantidad.toFixed(2)} unidades
-                        </div>
-                    </div>
-                </div>
-            ),
-            confirmText: 'Enviar Movimiento',
-            cancelText: 'Cancelar',
-            type: 'info',
-            onConfirm: confirmarMovimiento
-        });
-
-        setShowConfirmModal(true);
-    };
-
-    const confirmarMovimiento = async () => {
-        try {
-            setShowConfirmModal(false);
-            setSaving(true);
-
-            // Preparar items válidos
-            const itemsValidos = itemsMovimiento
-                .filter(item => item.Item_Id && item.Cantidad && parseFloat(item.Cantidad) > 0)
-                .map(item => ({
-                    Item_Id: parseInt(item.Item_Id),
-                    Cantidad: parseFloat(item.Cantidad)
-                }));
-
-            let response;
-            
-            switch (tipo) {
-                case 'entrada':
-                    response = await movimientoService.crearEntrada(movimientoData, itemsValidos);
-                    break;
-                case 'salida':
-                    response = await movimientoService.crearSalida(movimientoData, itemsValidos);
-                    break;
-                case 'transferencia':
-                    response = await movimientoService.crearTransferencia(movimientoData, itemsValidos);
-                    break;
-                case 'ajuste':
-                    response = await movimientoService.crearAjuste(movimientoData, itemsValidos);
-                    break;
-                default:
-                    throw new Error('Tipo de movimiento no válido');
+        // Navegar a la página de resumen con los datos
+        navigate('/bodegas/movimientos/resumen', {
+            state: {
+                movimientoData,
+                itemsMovimiento: itemsValidos,
+                tipo,
+                bodegas,
+                usuarioLogueado
             }
-
-            // Mostrar toast de éxito y regresar a la página de movimientos
-            toast.success(`${tipoInfo.titulo} creada exitosamente`);
-            navigate('/bodegas/movimientos');
-            
-        } catch (error) {
-            console.error('Error creando movimiento:', error);
-            toast.error(error.message || 'Error creando el movimiento');
-            setSaving(false);
-        }
+        });
     };
+
+
+    // Nota: La función confirmarMovimiento se movió a ResumenMovimiento.jsx
+    // Esta función ya no es necesaria aquí
+
+    // Nota: La lógica de confirmación se movió a ResumenMovimiento.jsx
 
     const handleSubmit = (e) => {
         e.preventDefault();

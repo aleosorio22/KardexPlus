@@ -22,6 +22,7 @@ import ResumenBodegas from "../pages/ResumenBodegas";
 import ExistenciasBodegas from "../pages/ExistenciasBodegas";
 import MovimientosBodegas from "../pages/MovimientosBodegas";
 import CrearMovimiento from "../pages/CrearMovimiento";
+import ResumenMovimiento from "../pages/ResumenMovimiento";
 import RequerimientosBodegas from "../pages/RequerimientosBodegas";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
@@ -116,6 +117,11 @@ function AppRouter() {
                 <Route 
                   path="bodegas/movimientos/crear/:tipo" 
                   element={<CrearMovimiento />}
+                />
+                
+                <Route 
+                  path="bodegas/movimientos/resumen" 
+                  element={<ResumenMovimiento />}
                 />
                 
                 <Route 
