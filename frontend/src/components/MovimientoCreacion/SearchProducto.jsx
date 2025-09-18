@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiSearch, FiCamera, FiX, FiPackage } from 'react-icons/fi';
 import { itemService } from '../../services/itemService';
 import { existenciaService } from '../../services/existenciaService';
+import { BarcodeScanner } from '../BarcodeScanner';
 
 const SearchProducto = ({ 
     onProductSelected, 
@@ -17,6 +18,7 @@ const SearchProducto = ({
     const [showResults, setShowResults] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [scanMode, setScanMode] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     
     const searchInputRef = useRef(null);
     const resultsRef = useRef(null);
@@ -200,6 +202,40 @@ const SearchProducto = ({
         searchInputRef.current?.focus();
     };
 
+    // Manejar resultado del escáner de códigos de barras
+    const handleScanResult = (codigoEscaneado) => {
+        console.log('Código escaneado:', codigoEscaneado);
+        
+        // Buscar producto por código escaneado
+        setSearchTerm(codigoEscaneado);
+        
+        // Buscar automáticamente el producto
+        const productoEncontrado = productos.find(p => 
+            p.Item_Codigo_SKU === codigoEscaneado ||
+            p.Item_Codigo_Barras === codigoEscaneado ||
+            p.Item_Id?.toString() === codigoEscaneado
+        );
+
+        if (productoEncontrado) {
+            // Si se encontró, seleccionarlo automáticamente
+            setTimeout(() => {
+                handleProductSelect(productoEncontrado);
+            }, 300);
+        } else {
+            // Si no se encontró, mostrar el código en el input para búsqueda manual
+            setShowResults(true);
+            filterProductos(codigoEscaneado);
+        }
+    };
+
+    const openScanner = () => {
+        setIsScannerOpen(true);
+    };
+
+    const closeScanner = () => {
+        setIsScannerOpen(false);
+    };
+
     const getStockIndicator = (tipoMovimiento) => {
         switch (tipoMovimiento) {
             case 'entrada':
@@ -230,25 +266,48 @@ const SearchProducto = ({
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => searchTerm && setShowResults(true)}
-                    className={`block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`block w-full pl-10 ${searchTerm ? 'pr-20' : 'pr-12'} py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         scanMode ? 'ring-2 ring-green-500 border-green-500' : ''
                     }`}
                     placeholder="Buscar producto por nombre, SKU o código..."
                     autoComplete="off"
                 />
 
-                {/* Botón limpiar */}
-                {searchTerm && (
-                    <div className="absolute inset-y-0 right-0 flex items-center">
+                {/* Botones de acción */}
+                <div className="absolute inset-y-0 right-0 flex items-center space-x-1 pr-2">
+                    {/* Botón scanner de código de barras */}
+                    <button
+                        onClick={openScanner}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Escanear código de barras"
+                    >
+                        <svg 
+                            className="w-5 h-5" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                        >
+                            <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M3 7v4a1 1 0 001 1h4m0-6L6 4a1 1 0 00-1 1v2m14 0V5a1 1 0 00-1-1l-2 2m4 6v4a1 1 0 01-1 1h-4m-4-8v8m-2-8v8m-2-8v8" 
+                            />
+                        </svg>
+                    </button>
+
+                    {/* Botón limpiar */}
+                    {searchTerm && (
                         <button
                             onClick={clearSearch}
-                            className="p-2 text-gray-400 hover:text-gray-600"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             type="button"
+                            title="Limpiar búsqueda"
                         >
                             <FiX className="h-5 w-5" />
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {/* Indicador de modo escaneo */}
                 {scanMode && (
@@ -324,6 +383,13 @@ const SearchProducto = ({
                     )}
                 </div>
             )}
+
+            {/* Scanner de código de barras */}
+            <BarcodeScanner 
+                isOpen={isScannerOpen}
+                onResult={handleScanResult}
+                onClose={closeScanner}
+            />
         </div>
     );
 };
