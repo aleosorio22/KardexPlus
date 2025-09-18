@@ -1,5 +1,6 @@
 import React from 'react';
 import { FiFileText } from 'react-icons/fi';
+import { Select } from '../common';
 
 /**
  * Componente FormularioMovimiento - Formulario mobile-first para datos del movimiento
@@ -18,6 +19,39 @@ const FormularioMovimiento = ({
     bodegas,
     camposConfig 
 }) => {
+    // Generar opciones de motivos según el tipo de movimiento
+    const getMotivosOptions = (tipo) => {
+        const motivosPorTipo = {
+            'entrada': [
+                { value: 'Compra', label: 'Compra' },
+                { value: 'Devolución', label: 'Devolución' },
+                { value: 'Producción', label: 'Producción' },
+                { value: 'Donación', label: 'Donación' },
+                { value: 'Otro', label: 'Otro' }
+            ],
+            'salida': [
+                { value: 'Venta', label: 'Venta' },
+                { value: 'Uso interno', label: 'Uso interno' },
+                { value: 'Pérdida/Daño', label: 'Pérdida/Daño' },
+                { value: 'Donación', label: 'Donación' },
+                { value: 'Otro', label: 'Otro' }
+            ],
+            'transferencia': [
+                { value: 'Reabastecimiento', label: 'Reabastecimiento' },
+                { value: 'Reorganización', label: 'Reorganización' },
+                { value: 'Distribución', label: 'Distribución' },
+                { value: 'Otro', label: 'Otro' }
+            ],
+            'ajuste': [
+                { value: 'Inventario físico', label: 'Inventario físico' },
+                { value: 'Corrección', label: 'Corrección' },
+                { value: 'Merma', label: 'Merma' },
+                { value: 'Otro', label: 'Otro' }
+            ]
+        };
+        
+        return motivosPorTipo[tipo] || [];
+    };
     return (
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-4 sm:p-6">
@@ -46,110 +80,62 @@ const FormularioMovimiento = ({
                         {/* Bodega Origen */}
                         {(tipo === 'salida' || tipo === 'transferencia') && (
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Almacén Origen *
-                                </label>
-                                <select
+                                <Select
+                                    label="Almacén Origen"
                                     value={movimientoData.Origen_Bodega_Id}
-                                    onChange={(e) => setMovimientoData({
+                                    onChange={(value) => setMovimientoData({
                                         ...movimientoData, 
-                                        Origen_Bodega_Id: e.target.value
+                                        Origen_Bodega_Id: value
                                     })}
-                                    className="w-full px-3 py-3 sm:px-4 text-sm sm:text-base border border-gray-300 rounded-lg 
-                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                             min-h-[44px] touch-manipulation bg-white"
+                                    options={bodegas.map(bodega => ({
+                                        value: bodega.Bodega_Id,
+                                        label: bodega.Bodega_Nombre
+                                    }))}
+                                    placeholder="Seleccionar almacén..."
                                     required
-                                >
-                                    <option value="">Seleccionar almacén...</option>
-                                    {bodegas.map(bodega => (
-                                        <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                            {bodega.Bodega_Nombre}
-                                        </option>
-                                    ))}
-                                </select>
+                                    searchable
+                                    clearable
+                                />
                             </div>
                         )}
 
                         {/* Bodega Destino */}
                         {(tipo === 'entrada' || tipo === 'transferencia' || tipo === 'ajuste') && (
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    {tipo === 'ajuste' ? 'Almacén *' : 'Almacén Destino *'}
-                                </label>
-                                <select
+                                <Select
+                                    label={tipo === 'ajuste' ? 'Almacén' : 'Almacén Destino'}
                                     value={movimientoData.Destino_Bodega_Id}
-                                    onChange={(e) => setMovimientoData({
+                                    onChange={(value) => setMovimientoData({
                                         ...movimientoData, 
-                                        Destino_Bodega_Id: e.target.value
+                                        Destino_Bodega_Id: value
                                     })}
-                                    className="w-full px-3 py-3 sm:px-4 text-sm sm:text-base border border-gray-300 rounded-lg 
-                                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                             min-h-[44px] touch-manipulation bg-white"
+                                    options={bodegas.map(bodega => ({
+                                        value: bodega.Bodega_Id,
+                                        label: bodega.Bodega_Nombre
+                                    }))}
+                                    placeholder="Seleccionar almacén..."
                                     required
-                                >
-                                    <option value="">Seleccionar almacén...</option>
-                                    {bodegas.map(bodega => (
-                                        <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                            {bodega.Bodega_Nombre}
-                                        </option>
-                                    ))}
-                                </select>
+                                    searchable
+                                    clearable
+                                />
                             </div>
                         )}
                     </div>
 
                     {/* Sección Motivo - Full width */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                            Motivo *
-                        </label>
-                        <select
+                        <Select
+                            label="Motivo"
                             value={movimientoData.Motivo}
-                            onChange={(e) => setMovimientoData({
+                            onChange={(value) => setMovimientoData({
                                 ...movimientoData, 
-                                Motivo: e.target.value
+                                Motivo: value
                             })}
-                            className="w-full px-3 py-3 sm:px-4 text-sm sm:text-base border border-gray-300 rounded-lg 
-                                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                     min-h-[44px] touch-manipulation bg-white"
+                            options={getMotivosOptions(tipo)}
+                            placeholder="Seleccionar motivo..."
                             required
-                        >
-                            <option value="">Seleccionar motivo...</option>
-                            {tipo === 'entrada' && (
-                                <>
-                                    <option value="Compra">Compra</option>
-                                    <option value="Devolución">Devolución</option>
-                                    <option value="Producción">Producción</option>
-                                    <option value="Donación">Donación</option>
-                                    <option value="Otro">Otro</option>
-                                </>
-                            )}
-                            {tipo === 'salida' && (
-                                <>
-                                    <option value="Venta">Venta</option>
-                                    <option value="Uso interno">Uso interno</option>
-                                    <option value="Pérdida/Daño">Pérdida/Daño</option>
-                                    <option value="Donación">Donación</option>
-                                    <option value="Otro">Otro</option>
-                                </>
-                            )}
-                            {tipo === 'transferencia' && (
-                                <>
-                                    <option value="Reabastecimiento">Reabastecimiento</option>
-                                    <option value="Reorganización">Reorganización</option>
-                                    <option value="Distribución">Distribución</option>
-                                    <option value="Otro">Otro</option>
-                                </>
-                            )}
-                            {tipo === 'ajuste' && (
-                                <>
-                                    <option value="Inventario físico">Inventario físico</option>
-                                    <option value="Corrección">Corrección</option>
-                                    <option value="Merma">Merma</option>
-                                    <option value="Otro">Otro</option>
-                                </>
-                            )}
-                        </select>
+                            searchable
+                        />
                     </div>
 
                     {/* Sección Información adicional - Stack en móvil */}
