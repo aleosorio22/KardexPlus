@@ -22,7 +22,7 @@
   - Encabezado con logo y tipo de documento
   - Detalle completo de items con códigos
   - Totales y resumen
-  - Observaciones y pie de página
+  - Observaciones y pie de páginas
   - Vista previa antes de imprimir
 
 ### 🖨️ Sistema de Impresión

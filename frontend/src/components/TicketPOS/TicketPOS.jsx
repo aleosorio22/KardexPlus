@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { FiPrinter, FiX, FiDownload, FiShare2 } from 'react-icons/fi';
 import './TicketPOS.css';
 
 const TicketPOS = ({ 
@@ -10,6 +12,34 @@ const TicketPOS = ({
     totales,
     onClose 
 }) => {
+    const ticketRef = useRef();
+
+    // Configurar impresión con react-to-print
+    const handlePrint = useReactToPrint({
+        contentRef: ticketRef,
+        documentTitle: `Ticket-${tipo}-${Date.now()}`,
+        onBeforeGetContent: () => {
+            // Asegurar que el ticket esté listo
+            return Promise.resolve();
+        },
+        onAfterPrint: () => {
+            console.log('Ticket impreso exitosamente');
+        },
+        pageStyle: `
+            @page {
+                size: 58mm auto;
+                margin: 0mm;
+            }
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-size: 11px;
+                    line-height: 1.2;
+                }
+            }
+        `
+    });
     // Obtener nombre de bodega
     const getBodegaNombre = (id) => {
         const bodega = bodegas?.find(b => b.Bodega_Id === parseInt(id));
@@ -42,48 +72,48 @@ const TicketPOS = ({
 
     return (
         <div className="ticket-pos-overlay">
-            {/* Header de controles para vista previa */}
-            <div style={{ 
-                position: 'fixed', 
-                top: '10px', 
-                right: '10px', 
-                zIndex: 10001,
-                display: 'flex',
-                gap: '10px'
-            }}>
-                <button 
-                    onClick={() => window.print()}
-                    style={{
-                        background: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        padding: '8px 16px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '14px'
-                    }}
-                >
-                    🖨️ Imprimir
-                </button>
+            {/* Header de controles mejorado */}
+            <div className="ticket-controls">
+                <div className="controls-group">
+                    <button 
+                        onClick={handlePrint}
+                        className="control-btn print-btn"
+                        title="Imprimir ticket"
+                    >
+                        <FiPrinter className="btn-icon" />
+                        <span>Imprimir</span>
+                    </button>
+                    <button 
+                        onClick={() => navigator.share && navigator.share({ title: 'Ticket KardexPlus', text: 'Comprobante de movimiento' })}
+                        className="control-btn share-btn"
+                        title="Compartir"
+                    >
+                        <FiShare2 className="btn-icon" />
+                        <span>Compartir</span>
+                    </button>
+                </div>
                 <button 
                     onClick={onClose}
-                    className="ticket-close-btn"
+                    className="control-btn close-btn"
+                    title="Cerrar"
                 >
-                    ×
+                    <FiX className="btn-icon" />
                 </button>
             </div>
             
             <div className="ticket-pos-container">
                 
-                {/* Contenido del ticket */}
-                <div className="ticket-pos">
-                    {/* Encabezado */}
+                {/* Contenido del ticket mejorado */}
+                <div ref={ticketRef} className="ticket-pos">
+                    {/* Encabezado mejorado */}
                     <div className="ticket-header">
+                        <div className="company-logo">📦</div>
                         <div className="company-name">KARDEX PLUS</div>
-                        <div className="company-subtitle">Sistema de Inventario</div>
-                        <div className="separator">================================</div>
+                        <div className="company-subtitle">Sistema de Inventario Inteligente</div>
+                        <div className="header-separator">═══════════════════════════════</div>
                         <div className="document-type">{getTipoTexto()}</div>
-                        <div className="separator">================================</div>
+                        <div className="document-number">#{numeroComprobante}</div>
+                        <div className="header-separator">═══════════════════════════════</div>
                     </div>
 
                     {/* Información del comprobante */}
