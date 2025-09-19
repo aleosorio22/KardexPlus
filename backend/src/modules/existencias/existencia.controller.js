@@ -1,8 +1,37 @@
 const ExistenciaModel = require('./existencia.model');
 
 class ExistenciaController {
-    // Obtener todas las existencias con paginación y filtros
+    // Obtener todas las existencias sin paginación (para DataTable frontend)
     static async getAllExistencias(req, res) {
+        try {
+            const filters = {
+                bodega_id: req.query.bodega_id,
+                categoria_id: req.query.categoria_id,
+                stock_bajo: req.query.stock_bajo,
+                stock_cero: req.query.stock_cero,
+                search: req.query.search
+            };
+
+            const existencias = await ExistenciaModel.findAll(filters);
+
+            res.json({
+                success: true,
+                data: existencias,
+                total: existencias.length,
+                message: 'Existencias obtenidas exitosamente'
+            });
+        } catch (error) {
+            console.error('Error obteniendo existencias:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    // Obtener existencias con paginación (endpoint opcional)
+    static async getExistenciasWithPagination(req, res) {
         try {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
@@ -42,7 +71,7 @@ class ExistenciaController {
                 message: 'Existencias obtenidas exitosamente'
             });
         } catch (error) {
-            console.error('Error obteniendo existencias:', error);
+            console.error('Error obteniendo existencias con paginación:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',

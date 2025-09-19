@@ -5,6 +5,83 @@ class MovimientoModel {
     // =======================================
     // MÉTODOS DE CONSULTA
     // =======================================
+
+    /**
+     * Obtener todos los movimientos sin paginación (para DataTable frontend)
+     * @param {object} filters - Filtros de búsqueda
+     */
+    static async findAll(filters = {}) {
+        try {
+            let whereClause = 'WHERE 1=1';
+            let params = [];
+
+            // Filtro por tipo de movimiento
+            if (filters.tipo_movimiento) {
+                whereClause += ' AND m.Tipo_Movimiento = ?';
+                params.push(filters.tipo_movimiento);
+            }
+
+            // Filtro por bodega (origen o destino)
+            if (filters.bodega_id) {
+                whereClause += ' AND (m.Origen_Bodega_Id = ? OR m.Destino_Bodega_Id = ?)';
+                params.push(filters.bodega_id, filters.bodega_id);
+            }
+
+            // Filtro por usuario
+            if (filters.usuario_id) {
+                whereClause += ' AND m.Usuario_Id = ?';
+                params.push(filters.usuario_id);
+            }
+
+            // Filtro por rango de fechas
+            if (filters.fecha_inicio) {
+                whereClause += ' AND DATE(m.Fecha) >= ?';
+                params.push(filters.fecha_inicio);
+            }
+
+            if (filters.fecha_fin) {
+                whereClause += ' AND DATE(m.Fecha) <= ?';
+                params.push(filters.fecha_fin);
+            }
+
+            // Filtro por item específico
+            if (filters.item_id) {
+                whereClause += ' AND EXISTS (SELECT 1 FROM Movimientos_Detalle md WHERE md.Movimiento_Id = m.Movimiento_Id AND md.Item_Id = ?)';
+                params.push(filters.item_id);
+            }
+
+            // Búsqueda por texto (motivo u observaciones)
+            if (filters.search) {
+                whereClause += ' AND (m.Motivo LIKE ? OR m.Observaciones LIKE ? OR u.Usuario_Nombre LIKE ? OR u.Usuario_Apellido LIKE ?)';
+                const searchTerm = `%${filters.search}%`;
+                params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            }
+
+            const query = `
+                SELECT 
+                    m.*,
+                    CONCAT(u.Usuario_Nombre, ' ', u.Usuario_Apellido) as Usuario_Nombre_Completo,
+                    bo.Bodega_Nombre as Origen_Bodega_Nombre,
+                    bd.Bodega_Nombre as Destino_Bodega_Nombre,
+                    COUNT(md.Item_Id) as Total_Items,
+                    SUM(md.Cantidad) as Total_Cantidad
+                FROM Movimientos m
+                INNER JOIN Usuarios u ON m.Usuario_Id = u.Usuario_Id
+                LEFT JOIN Bodegas bo ON m.Origen_Bodega_Id = bo.Bodega_Id
+                LEFT JOIN Bodegas bd ON m.Destino_Bodega_Id = bd.Bodega_Id
+                LEFT JOIN Movimientos_Detalle md ON m.Movimiento_Id = md.Movimiento_Id
+                ${whereClause}
+                GROUP BY m.Movimiento_Id
+                ORDER BY m.Fecha DESC
+            `;
+
+            const [rows] = await db.execute(query, params);
+            return rows;
+
+        } catch (error) {
+            throw error;
+        }
+    }
     
     /**
      * Obtener todos los movimientos con paginación y filtros

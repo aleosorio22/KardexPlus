@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     FiPackage,
@@ -17,6 +17,7 @@ import {
     FiFileText,
     FiChevronLeft,
     FiChevronRight,
+    FiChevronDown,
     FiX,
     FiCheck,
     FiAlertCircle,
@@ -29,6 +30,7 @@ import { bodegaService } from '../services/bodegaService';
 import { itemService } from '../services/itemService';
 import ConfirmModal from '../components/ConfirmModal';
 import ModalDetalle from '../components/ModalDetalle';
+import { ResponsiveDataView, SearchAndFilter } from '../components/DataTable';
 
 const MovimientosBodegas = () => {
     const navigate = useNavigate();
@@ -41,7 +43,7 @@ const MovimientosBodegas = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Estados para filtros y paginación
+    // Estados para filtros
     const [filtros, setFiltros] = useState({
         search: '',
         tipo_movimiento: '',
@@ -49,15 +51,6 @@ const MovimientosBodegas = () => {
         fecha_inicio: '',
         fecha_fin: '',
         usuario_id: ''
-    });
-
-    const [paginacion, setPaginacion] = useState({
-        current_page: 1,
-        per_page: 10,
-        total_records: 0,
-        total_pages: 0,
-        has_next: false,
-        has_prev: false
     });
 
     // Estados para modales
@@ -69,21 +62,13 @@ const MovimientosBodegas = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmModalConfig, setConfirmModalConfig] = useState({});
 
-    // Estados para métricas
-    const [metricas, setMetricas] = useState({
-        total_movimientos: 0,
-        entradas_hoy: 0,
-        salidas_hoy: 0,
-        transferencias_hoy: 0
-    });
-
     useEffect(() => {
         cargarDatosIniciales();
     }, []);
 
     useEffect(() => {
         cargarMovimientos();
-    }, [filtros, paginacion.current_page, paginacion.per_page]);
+    }, []);
 
     // Manejar mensajes de navegación (éxito/error)
     useEffect(() => {
@@ -134,27 +119,23 @@ const MovimientosBodegas = () => {
     const cargarMovimientos = async () => {
         try {
             setLoading(true);
-            const params = {
-                page: paginacion.current_page,
-                limit: paginacion.per_page,
-                ...filtros
-            };
-
-            const response = await movimientoService.getAllMovimientos(params);
+            
+            // Cargar todos los movimientos sin paginación del servidor
+            const response = await movimientoService.getAllMovimientos({
+                limit: 1000 // Cargar muchos registros, la paginación será del lado cliente
+            });
+            
+            console.log('📦 Movimientos cargados:', response);
             
             // Los datos están directamente en response.data
             const movimientos = response.data || [];
             setMovimientos(movimientos);
             
-            // La paginación está en response.pagination
-            setPaginacion(prev => ({
-                ...prev,
-                ...response.pagination
-            }));
+            console.log(`✅ ${movimientos.length} movimientos cargados exitosamente`);
 
         } catch (error) {
-            console.error('Error cargando movimientos:', error);
-            setError('Error cargando movimientos');
+            console.error('❌ Error cargando movimientos:', error);
+            setError('Error cargando movimientos: ' + (error.message || error.toString()));
         } finally {
             setLoading(false);
         }
@@ -171,24 +152,61 @@ const MovimientosBodegas = () => {
         }
     };
 
-    const handleFiltroChange = (campo, valor) => {
-        setFiltros(prev => ({
-            ...prev,
-            [campo]: valor
-        }));
-        setPaginacion(prev => ({ ...prev, current_page: 1 }));
+    // Opciones de filtros para SearchAndFilter
+    const filterOptions = [
+        {
+            id: 'search',
+            label: 'Búsqueda',
+            type: 'text',
+            defaultValue: '',
+            placeholder: 'Buscar por motivo, usuario, observaciones...'
+        },
+        {
+            id: 'tipo_movimiento',
+            label: 'Tipo de Movimiento',
+            type: 'select',
+            defaultValue: '',
+            options: [
+                { value: '', label: 'Todos los tipos' },
+                { value: 'Entrada', label: '📥 Entradas' },
+                { value: 'Salida', label: '📤 Salidas' },
+                { value: 'Transferencia', label: '🔄 Transferencias' },
+                { value: 'Ajuste', label: '⚙️ Ajustes' }
+            ]
+        },
+        {
+            id: 'bodega_id',
+            label: 'Bodega',
+            type: 'select',
+            defaultValue: '',
+            options: [
+                { value: '', label: 'Todas las bodegas' },
+                ...bodegas.map(bodega => ({
+                    value: bodega.Bodega_Id.toString(),
+                    label: `🏪 ${bodega.Bodega_Nombre}`
+                }))
+            ]
+        },
+        {
+            id: 'fecha_inicio',
+            label: 'Fecha Desde',
+            type: 'date',
+            defaultValue: ''
+        },
+        {
+            id: 'fecha_fin',  
+            label: 'Fecha Hasta',
+            type: 'date',
+            defaultValue: ''
+        }
+    ];
+
+    const handleFilterChange = (newFilters) => {
+        setFiltros(newFilters);
     };
 
-    const limpiarFiltros = () => {
-        setFiltros({
-            search: '',
-            tipo_movimiento: '',
-            bodega_id: '',
-            fecha_inicio: '',
-            fecha_fin: '',
-            usuario_id: ''
-        });
-        setPaginacion(prev => ({ ...prev, current_page: 1 }));
+    const handleRefresh = () => {
+        cargarMovimientos();
     };
 
     const cerrarModal = (tipo) => {
@@ -270,6 +288,235 @@ const MovimientosBodegas = () => {
         });
     };
 
+    // Filtrar movimientos del lado cliente
+    const filteredMovimientos = useMemo(() => {
+        return movimientos.filter(movimiento => {
+            // Filtro de búsqueda
+            const matchesSearch = !filtros.search || 
+                movimiento.Motivo?.toLowerCase().includes(filtros.search.toLowerCase()) ||
+                movimiento.Usuario_Nombre_Completo?.toLowerCase().includes(filtros.search.toLowerCase()) ||
+                movimiento.Observaciones?.toLowerCase().includes(filtros.search.toLowerCase()) ||
+                movimiento.Recepcionista?.toLowerCase().includes(filtros.search.toLowerCase());
+
+            // Filtro por tipo
+            const matchesType = !filtros.tipo_movimiento || 
+                movimiento.Tipo_Movimiento === filtros.tipo_movimiento;
+
+            // Filtro por bodega (origen o destino)
+            const matchesBodega = !filtros.bodega_id || 
+                movimiento.Origen_Bodega_Id?.toString() === filtros.bodega_id ||
+                movimiento.Destino_Bodega_Id?.toString() === filtros.bodega_id;
+
+            // Filtro por fecha desde
+            const matchesFechaDesde = !filtros.fecha_inicio || 
+                !movimiento.Fecha ||
+                new Date(movimiento.Fecha) >= new Date(filtros.fecha_inicio);
+
+            // Filtro por fecha hasta  
+            const matchesFechaHasta = !filtros.fecha_fin || 
+                !movimiento.Fecha ||
+                new Date(movimiento.Fecha) <= new Date(filtros.fecha_fin + 'T23:59:59');
+
+            return matchesSearch && matchesType && matchesBodega && matchesFechaDesde && matchesFechaHasta;
+        });
+    }, [movimientos, filtros]);
+
+    // Definir columnas para DataTable
+    const columns = [
+        {
+            field: 'Fecha',
+            header: 'Fecha y Hora',
+            render: (movimiento) => (
+                <div className="flex items-center">
+                    <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm">{formatFecha(movimiento.Fecha)}</span>
+                </div>
+            )
+        },
+        {
+            field: 'Tipo_Movimiento',
+            header: 'Tipo',
+            render: (movimiento) => {
+                const tipoInfo = getTipoMovimientoInfo(movimiento.Tipo_Movimiento);
+                const IconoTipo = tipoInfo.icono;
+                return (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${tipoInfo.color}`}>
+                        <IconoTipo className="h-3 w-3 mr-1" />
+                        {tipoInfo.texto}
+                    </span>
+                );
+            }
+        },
+        {
+            field: 'bodegas',
+            header: 'Bodegas',
+            sortable: false,
+            render: (movimiento) => (
+                <div className="space-y-1">
+                    {movimiento.Origen_Bodega_Nombre && (
+                        <div className="flex items-center text-red-600">
+                            <FiArrowUpRight className="h-3 w-3 mr-1" />
+                            <span className="text-xs">Desde: {movimiento.Origen_Bodega_Nombre}</span>
+                        </div>
+                    )}
+                    {movimiento.Destino_Bodega_Nombre && (
+                        <div className="flex items-center text-green-600">
+                            <FiArrowDownLeft className="h-3 w-3 mr-1" />
+                            <span className="text-xs">Hacia: {movimiento.Destino_Bodega_Nombre}</span>
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            field: 'Total_Items',
+            header: 'Items',
+            render: (movimiento) => (
+                <div>
+                    <div className="flex items-center">
+                        <span className="font-medium">{movimiento.Total_Items || 0}</span>
+                        <span className="text-gray-500 ml-1">items</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                        Total: {formatCantidad(movimiento.Total_Cantidad || 0)}
+                    </div>
+                </div>
+            )
+        },
+        {
+            field: 'Usuario_Nombre_Completo',
+            header: 'Usuario',
+            render: (movimiento) => (
+                <div className="flex items-center">
+                    <FiUser className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm">{movimiento.Usuario_Nombre_Completo || '-'}</span>
+                </div>
+            )
+        },
+        {
+            field: 'Motivo',
+            header: 'Motivo',
+            render: (movimiento) => (
+                <div className="max-w-xs">
+                    <p className="truncate text-sm" title={movimiento.Motivo}>
+                        {movimiento.Motivo || '-'}
+                    </p>
+                    {movimiento.Recepcionista && (
+                        <p className="text-xs text-gray-500 truncate">
+                            Recep: {movimiento.Recepcionista}
+                        </p>
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    // Renderizar card para móvil
+    const renderMovimientoCard = (movimiento) => {
+        const tipoInfo = getTipoMovimientoInfo(movimiento.Tipo_Movimiento);
+        const IconoTipo = tipoInfo.icono;
+        
+        return (
+            <div 
+                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => abrirModalDetalle(movimiento)}
+            >
+                {/* Header del card */}
+                <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${tipoInfo.color}`}>
+                            <IconoTipo className="h-3 w-3 mr-1" />
+                            {tipoInfo.texto}
+                        </span>
+                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            abrirModalDetalle(movimiento);
+                        }}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Ver detalle"
+                    >
+                        <FiEye className="h-4 w-4" />
+                    </button>
+                </div>
+
+                {/* Información principal */}
+                <div className="space-y-2">
+                    {/* Fecha */}
+                    <div className="flex items-center text-sm text-gray-600">
+                        <FiCalendar className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span>{formatFecha(movimiento.Fecha)}</span>
+                    </div>
+
+                    {/* Bodegas */}
+                    <div className="space-y-1">
+                        {movimiento.Origen_Bodega_Nombre && (
+                            <div className="flex items-center text-sm">
+                                <FiArrowUpRight className="h-4 w-4 mr-2 text-red-500 flex-shrink-0" />
+                                <span className="text-gray-600">Desde:</span>
+                                <span className="ml-1 font-medium text-red-600">{movimiento.Origen_Bodega_Nombre}</span>
+                            </div>
+                        )}
+                        {movimiento.Destino_Bodega_Nombre && (
+                            <div className="flex items-center text-sm">
+                                <FiArrowDownLeft className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
+                                <span className="text-gray-600">Hacia:</span>
+                                <span className="ml-1 font-medium text-green-600">{movimiento.Destino_Bodega_Nombre}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Items y cantidad */}
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center">
+                            <FiPackage className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-600">Items:</span>
+                            <span className="ml-1 font-medium">{movimiento.Total_Items || 0}</span>
+                        </div>
+                        <div className="text-gray-500">
+                            Total: {formatCantidad(movimiento.Total_Cantidad || 0)}
+                        </div>
+                    </div>
+
+                    {/* Usuario */}
+                    {movimiento.Usuario_Nombre_Completo && (
+                        <div className="flex items-center text-sm text-gray-600">
+                            <FiUser className="h-4 w-4 mr-2 flex-shrink-0" />
+                            <span>{movimiento.Usuario_Nombre_Completo}</span>
+                        </div>
+                    )}
+
+                    {/* Motivo */}
+                    {movimiento.Motivo && (
+                        <div className="flex items-start text-sm">
+                            <FiFileText className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-gray-600 break-words">{movimiento.Motivo}</p>
+                                {movimiento.Recepcionista && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Recepcionista: {movimiento.Recepcionista}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // Renderizar acciones de fila
+    const renderRowActions = (movimiento) => (
+        <button
+            onClick={() => abrirModalDetalle(movimiento)}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Ver detalle"
+        >
+            <FiEye className="h-4 w-4" />
+        </button>
+    );
+
 
 
     if (error) {
@@ -299,364 +546,148 @@ const MovimientosBodegas = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-white shadow-sm rounded-lg p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Movimientos de Inventario</h1>
-                        <p className="text-gray-600">Gestión y control de movimientos de stock</p>
+            {/* Header Mobile-First */}
+            <div className="bg-white shadow-sm rounded-lg p-4 md:p-6">
+                <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+                    <div className="text-center md:text-left">
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">📦 Movimientos</h1>
+                        <p className="text-sm md:text-base text-gray-600">Gestión de inventario</p>
                     </div>
-                    <div className="flex space-x-3">
+                    
+                    {/* Botones Mobile-First */}
+                    <div className="grid grid-cols-2 gap-2 md:flex md:space-x-3 md:gap-0">
+                        <button
+                            onClick={handleRefresh}
+                            className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center justify-center text-sm font-medium transition-colors md:order-last"
+                            title="Actualizar lista"
+                        >
+                            <FiRefreshCw className="h-4 w-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Actualizar</span>
+                        </button>
                         <button
                             onClick={() => navigate('/bodegas/movimientos/crear/entrada')}
-                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+                            className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center text-sm font-medium transition-colors"
                         >
-                            <FiArrowDownLeft className="h-4 w-4 mr-2" />
-                            Nueva Entrada
+                            <FiArrowDownLeft className="h-4 w-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Nueva </span>Entrada
                         </button>
                         <button
                             onClick={() => navigate('/bodegas/movimientos/crear/salida')}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center"
+                            className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center text-sm font-medium transition-colors"
                         >
-                            <FiArrowUpRight className="h-4 w-4 mr-2" />
-                            Nueva Salida
+                            <FiArrowUpRight className="h-4 w-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Nueva </span>Salida
                         </button>
                         <button
                             onClick={() => navigate('/bodegas/movimientos/crear/transferencia')}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                            className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center text-sm font-medium transition-colors"
                         >
-                            <FiRotateCw className="h-4 w-4 mr-2" />
-                            Nueva Transferencia
+                            <FiRotateCw className="h-4 w-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Nueva </span>Transferencia
                         </button>
                         <button
                             onClick={() => navigate('/bodegas/movimientos/crear/ajuste')}
-                            className="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex items-center"
+                            className="bg-yellow-600 text-white px-3 py-2 rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 flex items-center justify-center text-sm font-medium transition-colors"
                         >
-                            <FiSettings className="h-4 w-4 mr-2" />
-                            Nuevo Ajuste
+                            <FiSettings className="h-4 w-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Nuevo </span>Ajuste
                         </button>
-
                     </div>
                 </div>
             </div>
 
-            {/* Métricas */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <FiPackage className="h-8 w-8 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Total Movimientos</p>
-                            <p className="text-2xl font-semibold text-gray-900">{metricas.total_movimientos || 0}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <FiArrowDownLeft className="h-8 w-8 text-green-600" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Entradas Hoy</p>
-                            <p className="text-2xl font-semibold text-green-600">{metricas.entradas_hoy || 0}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <FiArrowUpRight className="h-8 w-8 text-red-600" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Salidas Hoy</p>
-                            <p className="text-2xl font-semibold text-red-600">{metricas.salidas_hoy || 0}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <FiRotateCw className="h-8 w-8 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-600">Transferencias Hoy</p>
-                            <p className="text-2xl font-semibold text-blue-600">{metricas.transferencias_hoy || 0}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filtros */}
-            <div className="bg-white shadow-sm rounded-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-                        <div className="relative">
-                            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                            <input
-                                type="text"
-                                placeholder="Buscar por motivo, observaciones..."
-                                value={filtros.search}
-                                onChange={(e) => handleFiltroChange('search', e.target.value)}
-                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                        <select
-                            value={filtros.tipo_movimiento}
-                            onChange={(e) => handleFiltroChange('tipo_movimiento', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Todos los tipos</option>
-                            <option value="Entrada">Entradas</option>
-                            <option value="Salida">Salidas</option>
-                            <option value="Transferencia">Transferencias</option>
-                            <option value="Ajuste">Ajustes</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bodega</label>
-                        <select
-                            value={filtros.bodega_id}
-                            onChange={(e) => handleFiltroChange('bodega_id', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Todas las bodegas</option>
-                            {bodegas.map((bodega) => (
-                                <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                    {bodega.Bodega_Nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                        <input
-                            type="date"
-                            value={filtros.fecha_inicio}
-                            onChange={(e) => handleFiltroChange('fecha_inicio', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                        <input
-                            type="date"
-                            value={filtros.fecha_fin}
-                            onChange={(e) => handleFiltroChange('fecha_fin', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                    <button
-                        onClick={limpiarFiltros}
-                        className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <FiX className="h-4 w-4 mr-2" />
-                        Limpiar
-                    </button>
-                    <button
-                        onClick={cargarMovimientos}
-                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <FiRefreshCw className="h-4 w-4 mr-2" />
-                        Actualizar
-                    </button>
-                </div>
-            </div>
-
-            {/* Tabla de Movimientos */}
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha y Hora
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tipo
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Bodegas
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Items
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Usuario
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Motivo
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Acciones
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center">
-                                        <div className="flex items-center justify-center">
-                                            <FiRefreshCw className="animate-spin h-6 w-6 text-blue-600 mr-2" />
-                                            <span className="text-gray-600">Cargando movimientos...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : movimientos.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center">
-                                        <div className="text-gray-500">
-                                            <FiPackage className="mx-auto h-12 w-12 mb-4" />
-                                            <p>No se encontraron movimientos</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                movimientos.map((movimiento) => {
-                                    const tipoInfo = getTipoMovimientoInfo(movimiento.Tipo_Movimiento);
-                                    const IconoTipo = tipoInfo.icono;
-
-                                    return (
-                                        <tr key={movimiento.Movimiento_Id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="flex items-center">
-                                                    <FiCalendar className="h-4 w-4 text-gray-400 mr-2" />
-                                                    {formatFecha(movimiento.Fecha)}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${tipoInfo.color}`}>
-                                                    <IconoTipo className="h-3 w-3 mr-1" />
-                                                    {tipoInfo.texto}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="space-y-1">
-                                                    {movimiento.Origen_Bodega_Nombre && (
-                                                        <div className="flex items-center text-red-600">
-                                                            <FiArrowUpRight className="h-3 w-3 mr-1" />
-                                                            <span className="text-xs">Desde: {movimiento.Origen_Bodega_Nombre}</span>
-                                                        </div>
-                                                    )}
-                                                    {movimiento.Destino_Bodega_Nombre && (
-                                                        <div className="flex items-center text-green-600">
-                                                            <FiArrowDownLeft className="h-3 w-3 mr-1" />
-                                                            <span className="text-xs">Hacia: {movimiento.Destino_Bodega_Nombre}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="flex items-center">
-                                                    <span className="font-medium">{movimiento.Total_Items || 0}</span>
-                                                    <span className="text-gray-500 ml-1">items</span>
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    Total: {formatCantidad(movimiento.Total_Cantidad || 0)}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="flex items-center">
-                                                    <FiUser className="h-4 w-4 text-gray-400 mr-2" />
-                                                    {movimiento.Usuario_Nombre_Completo || '-'}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <div className="max-w-xs">
-                                                    <p className="truncate" title={movimiento.Motivo}>
-                                                        {movimiento.Motivo || '-'}
-                                                    </p>
-                                                    {movimiento.Recepcionista && (
-                                                        <p className="text-xs text-gray-500 truncate">
-                                                            Recep: {movimiento.Recepcionista}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={() => abrirModalDetalle(movimiento)}
-                                                    className="text-blue-600 hover:text-blue-900 mr-3"
-                                                    title="Ver detalle"
-                                                >
-                                                    <FiEye className="h-4 w-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Paginación */}
-                {paginacion.total_pages > 1 && (
-                    <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                        <div className="flex-1 flex justify-between sm:hidden">
-                            <button
-                                onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
-                                disabled={!paginacion.has_prev}
-                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Anterior
-                            </button>
-                            <button
-                                onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
-                                disabled={!paginacion.has_next}
-                                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Siguiente
-                            </button>
-                        </div>
-                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm text-gray-700">
-                                    Mostrando {((paginacion.current_page - 1) * paginacion.per_page) + 1} a{' '}
-                                    {Math.min(paginacion.current_page * paginacion.per_page, paginacion.total_records)} de{' '}
-                                    {paginacion.total_records} resultados
-                                </p>
-                            </div>
-                            <div>
-                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <button
-                                        onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
-                                        disabled={!paginacion.has_prev}
-                                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                                    >
-                                        <FiChevronLeft className="h-5 w-5" />
-                                    </button>
-                                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        {paginacion.current_page} de {paginacion.total_pages}
-                                    </span>
-                                    <button
-                                        onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
-                                        disabled={!paginacion.has_next}
-                                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                                    >
-                                        <FiChevronRight className="h-5 w-5" />
-                                    </button>
-                                </nav>
+            {/* Métricas Mobile-First */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                        <div className="flex-shrink-0 mb-2 md:mb-0">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <FiPackage className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
                             </div>
                         </div>
+                        <div className="md:ml-4">
+                            <p className="text-xs md:text-sm font-medium text-gray-600">Total</p>
+                            <p className="text-lg md:text-2xl font-bold text-gray-900">{filteredMovimientos.length || 0}</p>
+                        </div>
                     </div>
-                )}
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                        <div className="flex-shrink-0 mb-2 md:mb-0">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <FiArrowDownLeft className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
+                            </div>
+                        </div>
+                        <div className="md:ml-4">
+                            <p className="text-xs md:text-sm font-medium text-gray-600">Entradas</p>
+                            <p className="text-lg md:text-2xl font-bold text-green-600">
+                                {filteredMovimientos.filter(m => m.Tipo_Movimiento === 'Entrada').length || 0}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                        <div className="flex-shrink-0 mb-2 md:mb-0">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <FiArrowUpRight className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
+                            </div>
+                        </div>
+                        <div className="md:ml-4">
+                            <p className="text-xs md:text-sm font-medium text-gray-600">Salidas</p>
+                            <p className="text-lg md:text-2xl font-bold text-red-600">
+                                {filteredMovimientos.filter(m => m.Tipo_Movimiento === 'Salida').length || 0}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                    <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                        <div className="flex-shrink-0 mb-2 md:mb-0">
+                            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <FiRotateCw className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
+                            </div>
+                        </div>
+                        <div className="md:ml-4">
+                            <p className="text-xs md:text-sm font-medium text-gray-600">Transferencias</p>
+                            <p className="text-lg md:text-2xl font-bold text-blue-600">
+                                {filteredMovimientos.filter(m => m.Tipo_Movimiento === 'Transferencia').length || 0}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {/* Búsqueda y Filtros */}
+            <SearchAndFilter
+                onFilter={handleFilterChange}
+                filters={filterOptions}
+                currentFilters={filtros}
+                totalItems={filteredMovimientos.length}
+                searchPlaceholder="Buscar por motivo, usuario, observaciones..."
+            />
+
+            {/* Vista Responsiva - Cards en móvil, Tabla en desktop */}
+            <ResponsiveDataView
+                data={filteredMovimientos}
+                columns={columns}
+                renderCard={renderMovimientoCard}
+                isLoading={loading}
+                emptyMessage="No se encontraron movimientos"
+                emptyIcon={FiPackage}
+                renderRowActions={renderRowActions}
+                initialPageSize={25}
+                pageSizeOptions={[10, 25, 50, 100]}
+                initialSortField="Fecha"
+                initialSortDirection="desc"
+                rowKeyField="Movimiento_Id"
+                mobileBreakpoint="lg"
+                onRowClick={(movimiento) => abrirModalDetalle(movimiento)}
+                onCardClick={(movimiento) => abrirModalDetalle(movimiento)}
+            />
 
             {/* Modales */}
 
