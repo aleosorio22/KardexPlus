@@ -1,5 +1,4 @@
-import React, { useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import React from 'react';
 import { FiPrinter, FiX, FiDownload, FiShare2 } from 'react-icons/fi';
 import './TicketPOS.css';
 
@@ -12,34 +11,52 @@ const TicketPOS = ({
     totales,
     onClose 
 }) => {
-    const ticketRef = useRef();
-
-    // Configurar impresión con react-to-print
-    const handlePrint = useReactToPrint({
-        contentRef: ticketRef,
-        documentTitle: `Ticket-${tipo}-${Date.now()}`,
-        onBeforeGetContent: () => {
-            // Asegurar que el ticket esté listo
-            return Promise.resolve();
-        },
-        onAfterPrint: () => {
-            console.log('Ticket impreso exitosamente');
-        },
-        pageStyle: `
-            @page {
-                size: 58mm auto;
-                margin: 0mm;
+    
+    // Función para generar PDF del ticket en el backend
+    const handlePrint = async () => {
+        try {
+            console.log('Generando PDF del ticket...');
+            
+            const datosTicket = {
+                movimiento: movimientoData,
+                items: itemsMovimiento,
+                tipo: tipo,
+                bodegas: bodegas,
+                usuario: usuarioLogueado,
+                totales: totales
+            };
+            
+            const response = await fetch('/api/movimientos/generar-ticket-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(datosTicket)
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                
+                // Abrir PDF en nueva pestaña para imprimir
+                const printWindow = window.open(url, '_blank');
+                
+                // Auto-abrir diálogo de impresión cuando se carga
+                printWindow.onload = () => {
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 500);
+                };
+            } else {
+                console.error('Error generando PDF:', response.statusText);
+                alert('Error al generar el ticket. Intente nuevamente.');
             }
-            @media print {
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-size: 11px;
-                    line-height: 1.2;
-                }
-            }
-        `
-    });
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión al generar el ticket.');
+        }
+    };
     // Obtener nombre de bodega
     const getBodegaNombre = (id) => {
         const bodega = bodegas?.find(b => b.Bodega_Id === parseInt(id));
@@ -78,10 +95,10 @@ const TicketPOS = ({
                     <button 
                         onClick={handlePrint}
                         className="control-btn print-btn"
-                        title="Imprimir ticket"
+                        title="Generar e imprimir PDF"
                     >
                         <FiPrinter className="btn-icon" />
-                        <span>Imprimir</span>
+                        <span>Generar PDF</span>
                     </button>
                     <button 
                         onClick={() => navigator.share && navigator.share({ title: 'Ticket KardexPlus', text: 'Comprobante de movimiento' })}
@@ -103,8 +120,8 @@ const TicketPOS = ({
             
             <div className="ticket-pos-container">
                 
-                {/* Contenido del ticket mejorado */}
-                <div ref={ticketRef} className="ticket-pos">
+                {/* Vista previa del ticket */}
+                <div className="ticket-pos">
                     {/* Encabezado mejorado */}
                     <div className="ticket-header">
                         <div className="company-logo">📦</div>

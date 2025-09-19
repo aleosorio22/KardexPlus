@@ -97,6 +97,17 @@ router.post('/validar-stock',
 );
 
 // =======================================
+// RUTAS PARA GENERACIÓN DE DOCUMENTOS
+// =======================================
+
+// POST /api/movimientos/generar-ticket-pdf - Generar ticket PDF para impresión
+router.post('/generar-ticket-pdf', 
+    authMiddleware, 
+    hasPermission('movimientos.ver'), 
+    MovimientoController.generarTicketPDF
+);
+
+// =======================================
 // RUTAS ESPECÍFICAS POR TIPO DE MOVIMIENTO
 // =======================================
 
