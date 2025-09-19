@@ -501,57 +501,305 @@ class MovimientoController {
      * Validar disponibilidad de stock antes de crear movimiento
      */
     static async validarStock(req, res) {
-        try {
-            const { bodega_id, items } = req.body;
+        try {/* Lines 505-545 omitted */} catch (error) {/* Lines 547-553 omitted */}
+    }
 
-            if (!bodega_id || !items || !Array.isArray(items)) {
+    // =======================================
+    // GENERACIÓN DE DOCUMENTOS PDF
+    // =======================================
+
+    /**
+     * Generar ticket PDF para imprimir en impresoras térmicas de 58mm
+     */
+    static async generarTicketPDF(req, res) {
+        try {
+            const { movimiento, items, tipo, bodegas, usuario, totales } = req.body;
+
+            // Validaciones básicas
+            if (!movimiento || !items || !tipo) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Bodega ID e items son requeridos'
+                    message: 'Faltan datos requeridos para generar el ticket'
                 });
             }
 
-            const validaciones = [];
+            if (!Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Debe incluir al menos un item'
+                });
+            }
 
-            for (const item of items) {
-                if (!item.Item_Id || !item.Cantidad) {
-                    continue;
+            // Importar PDFKit
+            const PDFDocument = require('pdfkit');
+            
+            // Crear documento PDF con tamaño optimizado para tickets térmicos 58mm
+            const doc = new PDFDocument({
+                size: [164.57, 841.89], // 58mm x 297mm en puntos
+                margins: {
+                    top: 8,
+                    bottom: 8,
+                    left: 8,
+                    right: 8
+                }
+            });
+
+            // Configurar respuesta HTTP
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="ticket-${tipo}-${Date.now()}.pdf"`);
+            res.setHeader('Cache-Control', 'no-cache');
+
+            // Enviar PDF al response
+            doc.pipe(res);
+
+            // ===== ENCABEZADO MEJORADO =====
+            
+            // Línea superior
+            doc.fontSize(8)
+               .text('================================', { align: 'center' })
+               .moveDown(0.2);
+
+            // Logo y nombre empresa
+            doc.fontSize(16)
+               .font('Helvetica-Bold')
+               .text('KARDEX PLUS', { align: 'center' })
+               .moveDown(0.1);
+
+            doc.fontSize(8)
+               .font('Helvetica')
+               .text('Sistema de Inventario Inteligente', { align: 'center' })
+               .moveDown(0.3);
+
+            // Línea divisoria
+            doc.text('================================', { align: 'center' })
+               .moveDown(0.3);
+
+            // Tipo de movimiento con mejor formato
+            const tiposTexto = {
+                entrada: 'ENTRADA DE INVENTARIO',
+                salida: 'SALIDA DE INVENTARIO', 
+                transferencia: 'TRANSFERENCIA ENTRE BODEGAS',
+                ajuste: 'AJUSTE DE INVENTARIO'
+            };
+
+            doc.fontSize(11)
+               .font('Helvetica-Bold')
+               .text(tiposTexto[tipo] || 'MOVIMIENTO DE INVENTARIO', { 
+                   align: 'center',
+                   width: 148
+               })
+               .moveDown(0.2);
+
+            // Número de comprobante más visible
+            const numeroComprobante = `${tipo.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`;
+            doc.fontSize(10)
+               .font('Helvetica-Bold')
+               .text(`No. ${numeroComprobante}`, { 
+                   align: 'center'
+               })
+               .moveDown(0.4);
+
+            // Línea divisoria mejorada
+            doc.fontSize(8)
+               .font('Helvetica')
+               .text('================================', { align: 'center' })
+               .moveDown(0.4);
+
+            // ===== INFORMACIÓN DEL MOVIMIENTO MEJORADA =====
+            doc.fontSize(8)
+               .font('Helvetica');
+
+            const fechaActual = new Date().toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Información en formato más estructurado
+            doc.text('INFORMACIÓN GENERAL', { align: 'center', underline: true })
+               .moveDown(0.2);
+
+            doc.text(`Fecha: ${fechaActual}`, { width: 148 })
+               .text(`Responsable: ${usuario || 'Sistema'}`, { width: 148 })
+               .moveDown(0.1);
+
+            if (movimiento.Recepcionista && movimiento.Recepcionista !== 'da') {
+                doc.text(`Recepcionista: ${movimiento.Recepcionista}`, { width: 148 });
+            }
+
+            if (movimiento.Motivo && movimiento.Motivo !== 'Devolución') {
+                doc.text(`Motivo: ${movimiento.Motivo}`, { width: 148 });
+            }
+
+            // Información de bodegas
+            const getBodegaNombre = (id) => {
+                if (!bodegas || !Array.isArray(bodegas)) return 'No especificada';
+                const bodega = bodegas.find(b => b.Bodega_Id === parseInt(id));
+                return bodega?.Bodega_Nombre || 'No especificada';
+            };
+
+            if (movimiento.Origen_Bodega_Id) {
+                doc.text(`Origen: ${getBodegaNombre(movimiento.Origen_Bodega_Id)}`);
+            }
+
+            if (movimiento.Destino_Bodega_Id) {
+                doc.text(`Destino: ${getBodegaNombre(movimiento.Destino_Bodega_Id)}`);
+            }
+
+            doc.moveDown(0.3);
+
+            // Línea divisoria para items
+            doc.text('--------------------------------', { align: 'center' })
+               .moveDown(0.2);
+
+            // ===== DETALLE DE ITEMS MEJORADO =====
+            doc.fontSize(10)
+               .font('Helvetica-Bold')
+               .text('DETALLE DE ITEMS', { align: 'center' })
+               .moveDown(0.2);
+
+            doc.fontSize(8)
+               .font('Helvetica')
+               .text('--------------------------------', { align: 'center' })
+               .moveDown(0.3);
+
+            // Listar items con mejor formato
+            items.forEach((item, index) => {
+                // Nombre del item más prominente
+                doc.fontSize(9)
+                   .font('Helvetica-Bold')
+                   .text(`${index + 1}. ${item.Item_Descripcion || item.Item_Nombre}`, { 
+                       width: 148, 
+                       lineGap: 2
+                   })
+                   .moveDown(0.1);
+
+                // Información del item en líneas separadas
+                doc.fontSize(7)
+                   .font('Helvetica')
+                   .text(`    Código: ${item.Item_Codigo || item.Item_Id}`, { width: 148 })
+                   .text(`    ID: ${item.Item_Id}`, { width: 148 });
+
+                const cantidad = parseFloat(item.Cantidad).toLocaleString('es-ES');
+                const unidad = item.UnidadMedida_Prefijo || item.Item_Unidad_Medida || 'Und';
+                
+                doc.fontSize(8)
+                   .font('Helvetica-Bold')
+                   .text(`    Cantidad: ${cantidad} ${unidad}`, { width: 148 });
+
+                // Precio si existe
+                if (item.Precio_Unitario && parseFloat(item.Precio_Unitario) > 0) {
+                    const precio = parseFloat(item.Precio_Unitario).toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    const subtotal = (parseFloat(item.Precio_Unitario) * parseFloat(item.Cantidad)).toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    doc.fontSize(7)
+                       .text(`    Precio unit: $${precio}`, { width: 148 })
+                       .text(`    Subtotal: $${subtotal}`, { width: 148 });
                 }
 
-                const stockActual = await MovimientoModel.getStockActual(
-                    item.Item_Id,
-                    bodega_id
-                );
+                // Separador entre items
+                if (index < items.length - 1) {
+                    doc.moveDown(0.2)
+                       .fontSize(7)
+                       .text('- - - - - - - - - - - - - - - -', { align: 'center' })
+                       .moveDown(0.2);
+                } else {
+                    doc.moveDown(0.3);
+                }
+            });
 
-                validaciones.push({
-                    item_id: item.Item_Id,
-                    cantidad_solicitada: item.Cantidad,
-                    stock_actual: stockActual,
-                    disponible: stockActual >= item.Cantidad,
-                    faltante: stockActual < item.Cantidad ? item.Cantidad - stockActual : 0
-                });
+            // Línea divisoria antes de totales
+            doc.fontSize(8)
+               .text('--------------------------------', { align: 'center' })
+               .moveDown(0.3);
+
+            // ===== TOTALES MEJORADOS =====
+            if (totales) {
+                doc.fontSize(9)
+                   .font('Helvetica-Bold')
+                   .text('RESUMEN', { align: 'center' })
+                   .moveDown(0.2);
+
+                doc.fontSize(8)
+                   .font('Helvetica')
+                   .text(`Items diferentes: ${totales.totalItems || items.length}`, { width: 148 })
+                   .text(`Cantidad total: ${totales.cantidadTotal?.toLocaleString('es-ES') || 'N/A'}`, { width: 148 });
+
+                if (totales.valorTotal && totales.valorTotal > 0) {
+                    doc.moveDown(0.2)
+                       .fontSize(10)
+                       .font('Helvetica-Bold')
+                       .text(`VALOR TOTAL: $${totales.valorTotal.toLocaleString('es-ES', {
+                           minimumFractionDigits: 2,
+                           maximumFractionDigits: 2
+                       })}`, { align: 'center' });
+                }
             }
 
-            const todosDisponibles = validaciones.every(v => v.disponible);
+            // Observaciones si existen y no están vacías
+            if (movimiento.Observaciones && movimiento.Observaciones !== 'da' && movimiento.Observaciones.trim() !== '') {
+                doc.moveDown(0.4)
+                   .fontSize(8)
+                   .text('--------------------------------', { align: 'center' })
+                   .moveDown(0.2);
 
-            res.json({
-                success: true,
-                data: {
-                    todos_disponibles: todosDisponibles,
-                    validaciones: validaciones
-                },
-                message: 'Validación de stock completada'
-            });
+                doc.fontSize(9)
+                   .font('Helvetica-Bold')
+                   .text('OBSERVACIONES', { align: 'center' })
+                   .moveDown(0.2);
+
+                doc.fontSize(8)
+                   .font('Helvetica')
+                   .text(movimiento.Observaciones, { 
+                       align: 'left',
+                       width: 148,
+                       lineGap: 1
+                   });
+            }
+
+            doc.moveDown(0.5)
+               .fontSize(8)
+               .text('================================', { align: 'center' })
+               .moveDown(0.3);
+
+            // ===== PIE MEJORADO =====
+            doc.fontSize(7)
+               .font('Helvetica')
+               .text('Documento generado automáticamente', { align: 'center' })
+               .text('por KardexPlus v1.0', { align: 'center' })
+               .moveDown(0.1)
+               .text('Conserve este comprobante', { align: 'center' })
+               .moveDown(0.2)
+               .text('================================', { align: 'center' })
+               .moveDown(0.3)
+               .fontSize(6)
+               .text(`Generado: ${fechaActual}`, { align: 'center' });
+
+            // Finalizar documento
+            doc.end();
 
         } catch (error) {
-            console.error('Error validando stock:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
+            console.error('Error generando ticket PDF:', error);
+            
+            if (!res.headersSent) {
+                res.status(500).json({
+                    success: false,
+                    message: 'Error interno al generar el ticket',
+                    error: error.message
+                });
+            }
         }
     }
 }
+
+module.exports = MovimientoController;
 
 module.exports = MovimientoController;

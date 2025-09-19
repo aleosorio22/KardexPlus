@@ -42,7 +42,7 @@ export const movimientoService = {
             
             // Agregar parámetros si existen
             Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
+                if (value !== null && value !== undefined && value !== '') {
                     queryParams.append(key, value);
                 }
             });
@@ -75,157 +75,6 @@ export const movimientoService = {
         }
     },
 
-    /**
-     * Obtener kardex de un item específico
-     * @param {number} itemId - ID del item
-     * @param {Object} params - Parámetros adicionales
-     * @param {number} params.bodega_id - ID de bodega (opcional)
-     * @param {string} params.fecha_inicio - Fecha inicial
-     * @param {string} params.fecha_fin - Fecha final
-     */
-    async getKardexItem(itemId, params = {}) {
-        try {
-            if (!itemId) {
-                throw new Error('ID de item es requerido');
-            }
-
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const url = `${API_BASE_URL}/movimientos/kardex/${itemId}${queryParams.toString() ? '?' + queryParams : ''}`;
-            const response = await axios.get(url, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo kardex:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    /**
-     * Obtener resumen de movimientos por período
-     * @param {string} fechaInicio - Fecha inicial (YYYY-MM-DD)
-     * @param {string} fechaFin - Fecha final (YYYY-MM-DD)
-     * @param {string} tipoMovimiento - Tipo específico (opcional)
-     */
-    async getResumenPorPeriodo(fechaInicio, fechaFin, tipoMovimiento = null) {
-        try {
-            if (!fechaInicio || !fechaFin) {
-                throw new Error('Las fechas de inicio y fin son requeridas');
-            }
-
-            const params = new URLSearchParams({
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
-            });
-
-            if (tipoMovimiento) {
-                params.append('tipo_movimiento', tipoMovimiento);
-            }
-
-            const response = await axios.get(`${API_BASE_URL}/movimientos/resumen/periodo?${params}`, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo resumen por período:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    /**
-     * Obtener stock actual de un item en una bodega
-     * @param {number} itemId - ID del item
-     * @param {number} bodegaId - ID de la bodega
-     */
-    async getStockActual(itemId, bodegaId) {
-        try {
-            if (!itemId || !bodegaId) {
-                throw new Error('IDs de item y bodega son requeridos');
-            }
-
-            const response = await axios.get(`${API_BASE_URL}/movimientos/stock/${itemId}/${bodegaId}`, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo stock actual:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    // =======================================
-    // MOVIMIENTOS POR TIPO
-    // =======================================
-
-    /**
-     * Obtener solo movimientos de entrada
-     * @param {Object} params - Parámetros de consulta
-     */
-    async getEntradas(params = {}) {
-        try {
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const response = await axios.get(`${API_BASE_URL}/movimientos/tipo/entradas?${queryParams}`, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo entradas:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    /**
-     * Obtener solo movimientos de salida
-     * @param {Object} params - Parámetros de consulta
-     */
-    async getSalidas(params = {}) {
-        try {
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const response = await axios.get(`${API_BASE_URL}/movimientos/tipo/salidas?${queryParams}`, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo salidas:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    /**
-     * Obtener solo movimientos de transferencia
-     * @param {Object} params - Parámetros de consulta
-     */
-    async getTransferencias(params = {}) {
-        try {
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const response = await axios.get(`${API_BASE_URL}/movimientos/tipo/transferencias?${queryParams}`, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo transferencias:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
     // =======================================
     // CREACIÓN DE MOVIMIENTOS
     // =======================================
@@ -241,21 +90,19 @@ export const movimientoService = {
      */
     async crearEntrada(movimientoData, items) {
         try {
-            // Validaciones básicas
             if (!movimientoData.Destino_Bodega_Id) {
-                throw new Error('La bodega de destino es requerida');
+                throw new Error('Bodega destino es requerida');
             }
 
-            if (!items || !Array.isArray(items) || items.length === 0) {
+            if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
 
-            const payload = {
+            const response = await axios.post(`${API_BASE_URL}/movimientos/entradas`, {
                 movimiento: movimientoData,
                 items: items
-            };
+            }, getAuthHeaders());
 
-            const response = await axios.post(`${API_BASE_URL}/movimientos/entradas`, payload, getAuthHeaders());
             return response.data;
             
         } catch (error) {
@@ -275,21 +122,19 @@ export const movimientoService = {
      */
     async crearSalida(movimientoData, items) {
         try {
-            // Validaciones básicas
             if (!movimientoData.Origen_Bodega_Id) {
-                throw new Error('La bodega de origen es requerida');
+                throw new Error('Bodega origen es requerida');
             }
 
-            if (!items || !Array.isArray(items) || items.length === 0) {
+            if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
 
-            const payload = {
+            const response = await axios.post(`${API_BASE_URL}/movimientos/salidas`, {
                 movimiento: movimientoData,
                 items: items
-            };
+            }, getAuthHeaders());
 
-            const response = await axios.post(`${API_BASE_URL}/movimientos/salidas`, payload, getAuthHeaders());
             return response.data;
             
         } catch (error) {
@@ -310,25 +155,23 @@ export const movimientoService = {
      */
     async crearTransferencia(movimientoData, items) {
         try {
-            // Validaciones básicas
             if (!movimientoData.Origen_Bodega_Id || !movimientoData.Destino_Bodega_Id) {
-                throw new Error('Las bodegas de origen y destino son requeridas');
+                throw new Error('Bodega origen y destino son requeridas');
             }
 
             if (movimientoData.Origen_Bodega_Id === movimientoData.Destino_Bodega_Id) {
-                throw new Error('Las bodegas de origen y destino deben ser diferentes');
+                throw new Error('La bodega origen debe ser diferente a la destino');
             }
 
-            if (!items || !Array.isArray(items) || items.length === 0) {
+            if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
 
-            const payload = {
+            const response = await axios.post(`${API_BASE_URL}/movimientos/transferencias`, {
                 movimiento: movimientoData,
                 items: items
-            };
+            }, getAuthHeaders());
 
-            const response = await axios.post(`${API_BASE_URL}/movimientos/transferencias`, payload, getAuthHeaders());
             return response.data;
             
         } catch (error) {
@@ -348,25 +191,23 @@ export const movimientoService = {
      */
     async crearAjuste(movimientoData, items) {
         try {
-            // Validaciones básicas
             if (!movimientoData.Destino_Bodega_Id) {
-                throw new Error('La bodega es requerida para ajustes');
+                throw new Error('Bodega es requerida para el ajuste');
             }
 
             if (!movimientoData.Motivo) {
-                throw new Error('El motivo es obligatorio para ajustes');
+                throw new Error('Motivo del ajuste es requerido');
             }
 
-            if (!items || !Array.isArray(items) || items.length === 0) {
+            if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
 
-            const payload = {
+            const response = await axios.post(`${API_BASE_URL}/movimientos/ajustes`, {
                 movimiento: movimientoData,
                 items: items
-            };
+            }, getAuthHeaders());
 
-            const response = await axios.post(`${API_BASE_URL}/movimientos/ajustes`, payload, getAuthHeaders());
             return response.data;
             
         } catch (error) {
@@ -375,128 +216,9 @@ export const movimientoService = {
         }
     },
 
-    /**
-     * Aprobar movimiento
-     * @param {number} movimientoId - ID del movimiento
-     * @param {string} observaciones - Observaciones de la aprobación
-     */
-    async aprobarMovimiento(movimientoId, observaciones = '') {
-        try {
-            if (!movimientoId) {
-                throw new Error('ID de movimiento es requerido');
-            }
-
-            const payload = { observaciones };
-
-            const response = await axios.put(`${API_BASE_URL}/movimientos/${movimientoId}/aprobar`, payload, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error aprobando movimiento:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    // =======================================
-    // UTILIDADES Y VALIDACIONES
-    // =======================================
-
-    /**
-     * Validar disponibilidad de stock antes de crear movimiento
-     * @param {number} bodegaId - ID de la bodega
-     * @param {Array} items - Array de items con Item_Id y Cantidad
-     */
-    async validarStock(bodegaId, items) {
-        try {
-            if (!bodegaId || !items || !Array.isArray(items)) {
-                throw new Error('Bodega ID e items son requeridos');
-            }
-
-            const payload = {
-                bodega_id: bodegaId,
-                items: items
-            };
-
-            const response = await axios.post(`${API_BASE_URL}/movimientos/validar-stock`, payload, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error validando stock:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    // =======================================
-    // REPORTES ESPECIALIZADOS
-    // =======================================
-
-    /**
-     * Obtener movimientos de una bodega específica
-     * @param {number} bodegaId - ID de la bodega
-     * @param {Object} params - Parámetros adicionales
-     */
-    async getMovimientosByBodega(bodegaId, params = {}) {
-        try {
-            if (!bodegaId) {
-                throw new Error('ID de bodega es requerido');
-            }
-
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const url = `${API_BASE_URL}/movimientos/reportes/por-bodega/${bodegaId}${queryParams.toString() ? '?' + queryParams : ''}`;
-            const response = await axios.get(url, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo movimientos por bodega:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
-    /**
-     * Obtener movimientos del día actual
-     * @param {Object} params - Parámetros adicionales
-     */
-    async getMovimientosHoy(params = {}) {
-        try {
-            const queryParams = new URLSearchParams();
-            Object.entries(params).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    queryParams.append(key, value);
-                }
-            });
-
-            const url = `${API_BASE_URL}/movimientos/reportes/hoy${queryParams.toString() ? '?' + queryParams : ''}`;
-            const response = await axios.get(url, getAuthHeaders());
-            return response.data;
-            
-        } catch (error) {
-            console.error('Error obteniendo movimientos del día:', error);
-            throw error.response ? error.response.data : error;
-        }
-    },
-
     // =======================================
     // FORMATEO Y UTILIDADES
     // =======================================
-
-    /**
-     * Formatear datos de movimiento para mostrar
-     * @param {Object} movimiento - Datos del movimiento
-     */
-    formatMovimientoForDisplay(movimiento) {
-        return {
-            ...movimiento,
-            fecha_formateada: this.formatFecha(movimiento.Fecha),
-            tipo_icono: this.getTipoMovimientoIcon(movimiento.Tipo_Movimiento),
-            tipo_color: this.getTipoMovimientoColor(movimiento.Tipo_Movimiento)
-        };
-    },
 
     /**
      * Obtener icono para tipo de movimiento
@@ -551,6 +273,87 @@ export const movimientoService = {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2
         });
+    },
+
+    // =======================================
+    // GENERACIÓN DE DOCUMENTOS
+    // =======================================
+
+    /**
+     * Generar ticket PDF para imprimir
+     * @param {Object} datosTicket - Datos completos del ticket
+     * @param {Object} datosTicket.movimiento - Datos del movimiento
+     * @param {Array} datosTicket.items - Items del movimiento
+     * @param {string} datosTicket.tipo - Tipo de movimiento
+     * @param {Array} datosTicket.bodegas - Lista de bodegas
+     * @param {string} datosTicket.usuario - Usuario responsable
+     * @param {Object} datosTicket.totales - Totales calculados
+     */
+    async generarTicketPDF(datosTicket) {
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/movimientos/generar-ticket-pdf`, 
+                datosTicket, 
+                {
+                    ...getAuthHeaders(),
+                    responseType: 'blob' // Importante para recibir el PDF como blob
+                }
+            );
+
+            if (response.status === 200) {
+                // Crear URL del blob para descargar/imprimir
+                const blob = new Blob([response.data], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                
+                // Abrir en nueva pestaña para imprimir
+                const printWindow = window.open(url, '_blank');
+                
+                if (printWindow) {
+                    // Auto-abrir diálogo de impresión
+                    printWindow.onload = () => {
+                        setTimeout(() => {
+                            printWindow.print();
+                        }, 500);
+                    };
+                    
+                    return {
+                        success: true,
+                        message: 'Ticket generado exitosamente',
+                        url: url
+                    };
+                } else {
+                    // Si no se pudo abrir ventana, ofrecer descarga
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `ticket-${datosTicket.tipo}-${Date.now()}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    return {
+                        success: true,
+                        message: 'Ticket descargado exitosamente'
+                    };
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error generando ticket PDF:', error);
+            
+            let message = 'Error al generar el ticket';
+            
+            if (error.response?.status === 403) {
+                message = 'No tiene permisos para generar tickets';
+            } else if (error.response?.status === 400) {
+                message = error.response.data?.message || 'Datos inválidos para generar el ticket';
+            }
+            
+            throw {
+                success: false,
+                message: message,
+                error: error.response ? error.response.data : error
+            };
+        }
     }
 };
 

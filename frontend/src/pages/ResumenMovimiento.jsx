@@ -99,34 +99,31 @@ const ResumenMovimiento = () => {
         navigate(-1); // Volver a la página anterior
     };
 
-    const handleImprimir = () => {
-        setMostrarTicket(true);
-        // Trigger print después de que se renderice el ticket
-        setTimeout(() => {
-            // Configurar la página para impresión de tickets
-            const style = document.createElement('style');
-            style.textContent = `
-                @page {
-                    size: 58mm auto;
-                    margin: 0;
-                }
-                @media print {
-                    body {
-                        margin: 0;
-                        padding: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
+    const handleImprimir = async () => {
+        try {
+            console.log('Generando ticket PDF...');
             
-            window.print();
+            // Preparar datos para el ticket
+            const datosTicket = {
+                movimiento: movimientoData,
+                items: itemsMovimiento,
+                tipo: tipo,
+                bodegas: bodegas,
+                usuario: usuarioLogueado,
+                totales: totales
+            };
+
+            // Usar el servicio para generar el PDF
+            const resultado = await movimientoService.generarTicketPDF(datosTicket);
             
-            // Limpiar el estilo después de imprimir
-            setTimeout(() => {
-                document.head.removeChild(style);
-                setMostrarTicket(false);
-            }, 1000);
-        }, 500);
+            if (resultado.success) {
+                toast.success(resultado.message);
+            }
+            
+        } catch (error) {
+            console.error('Error generando ticket:', error);
+            toast.error(error.message || 'Error al generar el ticket');
+        }
     };
 
     const handleConfirmar = async () => {
