@@ -7,9 +7,43 @@ class MovimientoController {
     // =======================================
 
     /**
-     * Obtener todos los movimientos con paginación y filtros
+     * Obtener todos los movimientos sin paginación (para DataTable frontend)
      */
     static async getAllMovimientos(req, res) {
+        try {
+            const filters = {
+                tipo_movimiento: req.query.tipo_movimiento,
+                bodega_id: req.query.bodega_id,
+                usuario_id: req.query.usuario_id,
+                fecha_inicio: req.query.fecha_inicio,
+                fecha_fin: req.query.fecha_fin,
+                item_id: req.query.item_id,
+                search: req.query.search
+            };
+
+            const movimientos = await MovimientoModel.findAll(filters);
+
+            res.json({
+                success: true,
+                data: movimientos,
+                total: movimientos.length,
+                message: 'Movimientos obtenidos exitosamente'
+            });
+
+        } catch (error) {
+            console.error('Error obteniendo movimientos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtener movimientos con paginación (endpoint opcional)
+     */
+    static async getMovimientosWithPagination(req, res) {
         try {
             const page = parseInt(req.query.page) || 1;
             const limit = parseInt(req.query.limit) || 10;
@@ -50,7 +84,7 @@ class MovimientoController {
             });
 
         } catch (error) {
-            console.error('Error obteniendo movimientos:', error);
+            console.error('Error obteniendo movimientos con paginación:', error);
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',
