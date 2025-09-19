@@ -1,170 +1,277 @@
-/* Estilos para Ticket POS 58mm */
+/* ===== TICKET POS MODERNO 58mm ===== */
+
 .ticket-pos-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.8);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(20, 20, 40, 0.9));
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    padding: 20px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+/* Controles mejorados */
+.ticket-controls {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10001;
+}
+
+.controls-group {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.print-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+}
+
+.print-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.share-btn {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.share-btn:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
+}
+
+.close-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 10px;
+}
+
+.close-btn:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    width: 16px;
+    height: 16px;
 }
 
 .ticket-pos-container {
     position: relative;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
     max-height: 85vh;
     overflow-y: auto;
-    /* Simular tamaño real de ticket 58mm */
-    width: 220px; /* ~58mm en pantalla */
-    min-height: 300px;
-    border: 1px solid #e5e5e5;
+    width: 240px; /* Más ancho para mejor legibilidad */
+    min-height: 320px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.ticket-close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #ef4444;
-    color: white;
-    border: none;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+/* Estilos eliminados - ahora usamos los nuevos controles */
 
-.ticket-close-btn:hover {
-    background: #dc2626;
-}
-
-/* Ticket POS - Formato 58mm */
+/* ===== TICKET CONTENT MODERNO ===== */
 .ticket-pos {
-    width: 58mm; /* Ancho estándar del ticket */
-    min-height: 100mm;
+    width: 100%;
     max-width: 58mm;
-    background: white;
-    color: black;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 9px;
-    line-height: 1.1;
-    padding: 3mm;
     margin: 0 auto;
-    box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    padding: 12px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 12px;
+    line-height: 1.3;
+    color: #1f2937;
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
 }
 
-/* Encabezado */
+/* Encabezado moderno */
 .ticket-header {
     text-align: center;
-    margin-bottom: 2mm;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border-radius: 8px;
+}
+
+.company-logo {
+    font-size: 24px;
+    margin-bottom: 4px;
 }
 
 .company-name {
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-    margin-bottom: 1mm;
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 3px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .company-subtitle {
-    font-size: 8px;
-    margin-top: 0.5mm;
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 8px;
+    font-style: italic;
 }
 
 .document-type {
-    font-size: 9px;
-    font-weight: bold;
-    margin: 1.5mm 0;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 6px 0;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.separator {
-    font-size: 7px;
-    text-align: center;
-    margin: 0.5mm 0;
-    font-weight: normal;
-    letter-spacing: 0px;
+.document-number {
+    font-size: 11px;
+    color: #059669;
+    font-weight: 600;
+    margin: 4px 0;
 }
 
-/* Información del comprobante */
+.header-separator {
+    font-size: 8px;
+    margin: 4px 0;
+    color: #cbd5e1;
+    letter-spacing: -0.5px;
+}
+
+/* Información del comprobante - diseño moderno */
 .ticket-info {
-    margin-bottom: 3mm;
+    margin-bottom: 15px;
+    background: rgba(248, 250, 252, 0.6);
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 3px solid #3b82f6;
 }
 
 .info-line {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 1mm;
-    font-size: 9px;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 10px;
+    padding: 2px 0;
 }
 
 .info-line .label {
-    font-weight: bold;
+    font-weight: 600;
+    color: #374151;
     flex-shrink: 0;
 }
 
 .info-line .value {
     text-align: right;
+    color: #1f2937;
+    font-weight: 500;
     word-break: break-word;
     flex: 1;
-    margin-left: 2mm;
+    margin-left: 8px;
 }
 
-/* Items */
+/* ===== ITEMS SECTION MODERNA ===== */
 .ticket-items {
-    margin-bottom: 3mm;
+    margin-bottom: 15px;
 }
 
 .items-header {
     text-align: center;
-    font-weight: bold;
-    font-size: 10px;
-    margin-bottom: 2mm;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e40af;
+    margin-bottom: 8px;
+    padding: 6px;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .item {
-    margin-bottom: 2mm;
-    border-bottom: 1px dotted #ccc;
-    padding-bottom: 1mm;
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: rgba(249, 250, 251, 0.8);
+    position: relative;
 }
 
 .item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .item-name {
-    font-weight: bold;
-    font-size: 9px;
-    margin-bottom: 0.5mm;
+    font-weight: 600;
+    font-size: 11px;
+    margin-bottom: 4px;
+    color: #111827;
     word-wrap: break-word;
+    line-height: 1.2;
 }
 
 .item-details {
     display: flex;
     justify-content: space-between;
-    font-size: 8px;
-    color: #666;
-    margin-bottom: 0.5mm;
+    font-size: 9px;
+    color: #6b7280;
+    margin-bottom: 4px;
+    gap: 8px;
+}
+
+.item-id {
+    color: #3b82f6;
+    font-weight: 500;
 }
 
 .item-quantity {
     display: flex;
     justify-content: space-between;
-    font-size: 9px;
-    margin-bottom: 0.5mm;
+    align-items: center;
+    font-size: 10px;
+    margin-bottom: 3px;
+}
+
+.qty {
+    font-weight: 600;
+    color: #059669;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.price {
+    font-weight: 600;
+    color: #dc2626;
 }
 
 .qty {
@@ -368,15 +475,132 @@
     }
 }
 
-/* Responsivo para pantalla */
-@media screen and (max-width: 480px) {
+/* ===== RESPONSIVE DESIGN PARA MÓVILES ===== */
+
+@media (max-width: 768px) {
     .ticket-pos-overlay {
         padding: 10px;
     }
     
+    .ticket-controls {
+        top: 10px;
+        right: 10px;
+        flex-direction: column;
+    }
+    
+    .controls-group {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .control-btn {
+        padding: 10px 14px;
+        font-size: 14px;
+        min-height: 44px; /* Área táctil mínima */
+    }
+    
+    .ticket-pos-container {
+        width: 95vw;
+        max-width: 320px;
+        max-height: 90vh;
+    }
+    
     .ticket-pos {
-        width: 100%;
-        max-width: 58mm;
-        min-width: 280px;
+        padding: 15px;
+        font-size: 13px;
+    }
+    
+    .company-name {
+        font-size: 18px;
+    }
+    
+    .document-type {
+        font-size: 14px;
+    }
+    
+    .info-line {
+        font-size: 11px;
+        margin-bottom: 8px;
+    }
+    
+    .item-name {
+        font-size: 12px;
+    }
+    
+    .item-details {
+        font-size: 10px;
+    }
+    
+    .item-quantity {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ticket-pos-overlay {
+        padding: 5px;
+    }
+    
+    .ticket-controls {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 10px;
+        justify-content: center;
+    }
+    
+    .ticket-pos-container {
+        width: 98vw;
+        border-radius: 12px;
+    }
+    
+    .control-btn span {
+        display: none; /* Solo iconos en móviles pequeños */
+    }
+    
+    .control-btn {
+        padding: 12px;
+        min-width: 44px;
+    }
+}
+
+/* ===== MEJORAS PARA ACCESIBILIDAD ===== */
+@media (prefers-reduced-motion: reduce) {
+    .control-btn {
+        transition: none;
+    }
+    
+    .control-btn:hover {
+        transform: none;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .ticket-pos {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+    
+    .ticket-header {
+        background: linear-gradient(135deg, #374151, #4b5563);
+    }
+    
+    .ticket-info {
+        background: rgba(55, 65, 81, 0.6);
+        border-left-color: #60a5fa;
+    }
+    
+    .item {
+        background: rgba(55, 65, 81, 0.8);
+        border-color: #4b5563;
+    }
+}
+
+/* Touch improvements */
+@media (pointer: coarse) {
+    .control-btn {
+        min-height: 48px;
+        min-width: 48px;
     }
 }
