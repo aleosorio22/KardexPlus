@@ -11,36 +11,24 @@ import {
 } from 'react-icons/fi';
 import { existenciaService } from '../services/existenciaService';
 import { itemBodegaParamService } from '../services/itemBodegaParamService';
-import bodegaService from '../services/bodegaService';
+import { BodegaSelector } from '../components/common';
 
 const ResumenBodegas = () => {
     const [resumenData, setResumenData] = useState(null);
     const [stockBajo, setStockBajo] = useState([]);
     const [sinStock, setSinStock] = useState([]);
     const [puntoReorden, setPuntoReorden] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [bodegaSeleccionada, setBodegaSeleccionada] = useState('todas');
 
     useEffect(() => {
-        cargarBodegas();
+        cargarDatos();
     }, []);
 
     useEffect(() => {
-        if (bodegas.length > 0) {
-            cargarDatos();
-        }
-    }, [bodegaSeleccionada, bodegas]);
-
-    const cargarBodegas = async () => {
-        try {
-            const response = await bodegaService.getAllBodegas();
-            setBodegas(response.data || []);
-        } catch (error) {
-            console.error('Error cargando bodegas:', error);
-        }
-    };
+        cargarDatos();
+    }, [bodegaSeleccionada]);
 
     const cargarDatos = async () => {
         try {
@@ -52,8 +40,8 @@ const ResumenBodegas = () => {
             
             const [resumen, itemsStockBajo, itemsSinStock, itemsPuntoReorden] = await Promise.all([
                 existenciaService.getResumenExistencias(bodegaId),
-                // Usar el nuevo servicio que considera los parámetros configurados
-                itemBodegaParamService.getItemsStockBajo(bodegaId),
+                // Usar el servicio con parámetros como objeto
+                existenciaService.getItemsStockBajo(bodegaId ? { bodegaId } : {}),
                 existenciaService.getItemsSinStock(bodegaId),
                 itemBodegaParamService.getItemsPuntoReorden(bodegaId)
             ]);
@@ -144,48 +132,56 @@ const ResumenBodegas = () => {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Resumen de Inventario</h1>
-                    <p className="text-gray-600">Vista general del estado actual del inventario</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <select
-                        value={bodegaSeleccionada}
-                        onChange={(e) => setBodegaSeleccionada(e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="todas">Todas las bodegas</option>
-                        {bodegas.map((bodega) => (
-                            <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                {bodega.Bodega_Nombre}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={cargarDatos}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2"
-                    >
-                        <FiRefreshCw className="h-4 w-4" />
-                        <span>Actualizar</span>
-                    </button>
+        <div className="space-y-6 pb-6 md:pb-8">
+            {/* Header Mobile-First */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                <div className="space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
+                    <div className="text-center md:text-left">
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Resumen de Inventario</h1>
+                        <p className="text-sm md:text-base text-gray-600 mt-1">Vista general del estado actual del inventario</p>
+                    </div>
+                    
+                    {/* Controles Avanzados - Mobile First */}
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end md:space-x-4">
+                        <div className="w-full md:w-64 lg:w-72">
+                            <BodegaSelector
+                                value={bodegaSeleccionada}
+                                onChange={setBodegaSeleccionada}
+                                showAllOption={true}
+                                allOptionLabel="Todas las bodegas"
+                                allOptionValue="todas"
+                                placeholder="Seleccionar almacén..."
+                                size="md"
+                                className="w-full"
+                                onLoadComplete={(bodegasData) => {
+                                }}
+                            />
+                        </div>
+                        <button
+                            onClick={cargarDatos}
+                            className="w-full md:w-auto bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center space-x-2 font-medium transition-colors min-h-[44px]"
+                        >
+                            <FiRefreshCw className="h-4 w-4" />
+                            <span>Actualizar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Tarjetas de métricas principales */}
+            {/* Métricas Mobile-First */}
             {resumenData && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
                     {/* Total de Items */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiPackage className="h-8 w-8 text-blue-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <FiPackage className="h-6 w-6 md:h-7 md:w-7 text-blue-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Total Items</p>
-                                <p className="text-2xl font-bold text-gray-900">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Total Items</p>
+                                <p className="text-lg md:text-2xl font-bold text-gray-900">
                                     {formatCantidad(resumenData.total_items || 0)}
                                 </p>
                             </div>
@@ -193,14 +189,16 @@ const ResumenBodegas = () => {
                     </div>
 
                     {/* Valor Total del Inventario */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiTrendingUp className="h-8 w-8 text-green-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-green-100 rounded-full flex items-center justify-center">
+                                    <FiTrendingUp className="h-6 w-6 md:h-7 md:w-7 text-green-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Valor Total</p>
-                                <p className="text-2xl font-bold text-gray-900">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Valor Total</p>
+                                <p className="text-sm md:text-2xl font-bold text-gray-900 break-all">
                                     {formatValor(resumenData.valor_total || 0)}
                                 </p>
                             </div>
@@ -208,14 +206,16 @@ const ResumenBodegas = () => {
                     </div>
 
                     {/* Items con Stock Bajo */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiAlertTriangle className="h-8 w-8 text-yellow-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <FiAlertTriangle className="h-6 w-6 md:h-7 md:w-7 text-yellow-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Stock Bajo</p>
-                                <p className="text-2xl font-bold text-yellow-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Stock Bajo</p>
+                                <p className="text-lg md:text-2xl font-bold text-yellow-600">
                                     {Array.isArray(stockBajo) ? stockBajo.length : 0}
                                 </p>
                             </div>
@@ -223,14 +223,16 @@ const ResumenBodegas = () => {
                     </div>
 
                     {/* Items Sin Stock */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiXCircle className="h-8 w-8 text-red-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-red-100 rounded-full flex items-center justify-center">
+                                    <FiXCircle className="h-6 w-6 md:h-7 md:w-7 text-red-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Sin Stock</p>
-                                <p className="text-2xl font-bold text-red-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Sin Stock</p>
+                                <p className="text-lg md:text-2xl font-bold text-red-600">
                                     {Array.isArray(sinStock) ? sinStock.length : 0}
                                 </p>
                             </div>
@@ -238,14 +240,16 @@ const ResumenBodegas = () => {
                     </div>
 
                     {/* Punto de Reorden */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiRefreshCw className="h-8 w-8 text-orange-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 md:col-span-3 lg:col-span-1">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <FiRefreshCw className="h-6 w-6 md:h-7 md:w-7 text-orange-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Punto de Reorden</p>
-                                <p className="text-2xl font-bold text-orange-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Punto de Reorden</p>
+                                <p className="text-lg md:text-2xl font-bold text-orange-600">
                                     {Array.isArray(puntoReorden) ? puntoReorden.length : 0}
                                 </p>
                             </div>
@@ -254,46 +258,61 @@ const ResumenBodegas = () => {
                 </div>
             )}
 
-            {/* Sección de Alertas */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Alertas Mobile-First */}
+            <div className="mt-6 md:mt-8 space-y-4 md:space-y-0 md:grid md:grid-cols-1 lg:grid-cols-2 md:gap-6">
                 {/* Items con Stock Bajo */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="p-4 md:px-6 md:py-4 border-b border-gray-200">
                         <div className="flex items-center">
-                            <FiAlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <FiAlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-yellow-600 mr-2" />
+                            <h3 className="text-base md:text-lg font-medium text-gray-900">
                                 Items con Stock Bajo ({Array.isArray(stockBajo) ? stockBajo.length : 0})
                             </h3>
                         </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-4 md:p-6">
                         {!Array.isArray(stockBajo) || stockBajo.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4">
+                            <p className="text-gray-500 text-center py-4 text-sm">
                                 No hay items con stock bajo
                             </p>
                         ) : (
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                            <div className="space-y-3 max-h-48 md:max-h-64 overflow-y-auto">
                                 {stockBajo.slice(0, 10).map((item, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{item.Item_Nombre}</p>
-                                            <p className="text-sm text-gray-600">{item.Bodega_Nombre}</p>
-                                            <p className="text-xs text-gray-500">SKU: {item.Item_Codigo_SKU}</p>
-                                            <p className="text-xs text-blue-600">
-                                                Cat: {item.CategoriaItem_Nombre}
-                                            </p>
+                                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between p-3 bg-yellow-50 rounded-lg space-y-2 sm:space-y-0">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-sm text-gray-900 truncate">{item.Item_Nombre}</p>
+                                            <p className="text-xs text-gray-600">{item.Bodega_Nombre}</p>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                <p className="text-xs text-gray-500">SKU: {item.Item_Codigo_SKU}</p>
+                                                <p className="text-xs text-blue-600">
+                                                    Cat: {item.CategoriaItem_Nombre}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-medium text-yellow-600">
-                                                Actual: {formatCantidad(item.Cantidad_Actual || item.Cantidad)}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                Mín: {formatCantidad(item.Stock_Min_Bodega)}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{item.UnidadMedida_Prefijo}</p>
-                                            <p className="text-xs text-red-500">
-                                                Necesita: {formatCantidad((item.Stock_Min_Bodega || 0) - (item.Cantidad_Actual || item.Cantidad || 0))}
-                                            </p>
+                                        <div className="text-left sm:text-right">
+                                            <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:gap-1 text-xs">
+                                                <div className="flex justify-between sm:justify-end items-center">
+                                                    <span className="text-gray-500 sm:hidden">Actual:</span>
+                                                    <span className="font-medium text-yellow-600">
+                                                        {formatCantidad(item.Cantidad_Actual || item.Cantidad)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between sm:justify-end items-center">
+                                                    <span className="text-gray-500 sm:hidden">Mín:</span>
+                                                    <span className="text-gray-600">
+                                                        {formatCantidad(item.Stock_Min_Bodega)}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1 flex justify-between sm:justify-end items-center">
+                                                    <span className="text-gray-500 sm:hidden">Necesita:</span>
+                                                    <span className="text-red-500 font-medium">
+                                                        {formatCantidad((item.Stock_Min_Bodega || 0) - (item.Cantidad_Actual || item.Cantidad || 0))}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1 text-gray-500 text-center sm:text-right">
+                                                    {item.UnidadMedida_Prefijo}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -309,30 +328,42 @@ const ResumenBodegas = () => {
 
                 {/* Items Sin Stock */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="p-4 md:px-6 md:py-4 border-b border-gray-200">
                         <div className="flex items-center">
-                            <FiXCircle className="h-5 w-5 text-red-600 mr-2" />
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <FiXCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 mr-2" />
+                            <h3 className="text-base md:text-lg font-medium text-gray-900">
                                 Items Sin Stock ({Array.isArray(sinStock) ? sinStock.length : 0})
                             </h3>
                         </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-4 md:p-6">
                         {!Array.isArray(sinStock) || sinStock.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4">
+                            <p className="text-gray-500 text-center py-4 text-sm">
                                 No hay items sin stock
                             </p>
                         ) : (
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                            <div className="space-y-3 max-h-48 md:max-h-64 overflow-y-auto">
                                 {sinStock.slice(0, 10).map((item, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{item.item_nombre}</p>
-                                            <p className="text-sm text-gray-600">{item.bodega_nombre}</p>
+                                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between p-3 bg-red-50 rounded-lg space-y-2 sm:space-y-0">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-sm text-gray-900 truncate">{item.Item_Nombre || item.item_nombre}</p>
+                                            <p className="text-xs text-gray-600">{item.Bodega_Nombre || item.bodega_nombre}</p>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                <p className="text-xs text-gray-500">SKU: {item.Item_Codigo_SKU}</p>
+                                                <p className="text-xs text-blue-600">
+                                                    Cat: {item.CategoriaItem_Nombre}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-medium text-red-600">0</p>
-                                            <p className="text-xs text-gray-500">{item.unidad_nombre}</p>
+                                        <div className="text-left sm:text-right">
+                                            <div className="flex justify-between sm:justify-end items-center">
+                                                <span className="text-xs text-gray-500 sm:hidden">Stock:</span>
+                                                <p className="font-medium text-red-600">0</p>
+                                            </div>
+                                            <div className="flex justify-between sm:justify-end items-center mt-1">
+                                                <span className="text-xs text-gray-500 sm:hidden">Unidad:</span>
+                                                <p className="text-xs text-gray-500">{item.UnidadMedida_Prefijo || item.unidad_nombre || 'N/A'}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -347,35 +378,49 @@ const ResumenBodegas = () => {
                 </div>
             </div>
 
-            {/* Items en Punto de Reorden */}
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+            {/* Items en Punto de Reorden Mobile-First */}
+            <div className="mt-6 md:mt-8">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="p-4 md:px-6 md:py-4 border-b border-gray-200">
                         <div className="flex items-center">
-                            <FiRefreshCw className="h-5 w-5 text-orange-600 mr-2" />
-                            <h3 className="text-lg font-medium text-gray-900">Items en Punto de Reorden</h3>
+                            <FiRefreshCw className="h-4 w-4 md:h-5 md:w-5 text-orange-600 mr-2" />
+                            <h3 className="text-base md:text-lg font-medium text-gray-900">
+                                Items en Punto de Reorden ({Array.isArray(puntoReorden) ? puntoReorden.length : 0})
+                            </h3>
                         </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-4 md:p-6">
                         {!Array.isArray(puntoReorden) || puntoReorden.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4">
+                            <p className="text-gray-500 text-center py-4 text-sm">
                                 No hay items en punto de reorden
                             </p>
                         ) : (
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
+                            <div className="space-y-3 max-h-48 md:max-h-64 overflow-y-auto">
                                 {puntoReorden.slice(0, 10).map((item, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{item.Item_Nombre || item.item_nombre}</p>
-                                            <p className="text-sm text-gray-600">{item.Bodega_Nombre || item.bodega_nombre}</p>
-                                            <p className="text-xs text-gray-500">SKU: {item.Item_Codigo_SKU || item.item_codigo}</p>
+                                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between p-3 bg-orange-50 rounded-lg space-y-2 sm:space-y-0">
+                                        <div className="flex-1">
+                                            <p className="font-medium text-sm text-gray-900 truncate">{item.Item_Nombre || item.item_nombre}</p>
+                                            <p className="text-xs text-gray-600">{item.Bodega_Nombre || item.bodega_nombre}</p>
+                                            <p className="text-xs text-gray-500 mt-1">SKU: {item.Item_Codigo_SKU || item.item_codigo}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-medium text-orange-600">
-                                                {item.Cantidad_Disponible || item.existencia_actual || 0}
-                                            </p>
-                                            <p className="text-xs text-gray-500">Reorden: {item.Punto_Reorden}</p>
-                                            <p className="text-xs text-gray-500">{item.UnidadMedida_Simbolo || item.unidad_nombre}</p>
+                                        <div className="text-left sm:text-right">
+                                            <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:gap-1 text-xs">
+                                                <div className="flex justify-between sm:justify-end items-center">
+                                                    <span className="text-gray-500 sm:hidden">Actual:</span>
+                                                    <span className="font-medium text-orange-600">
+                                                        {item.Cantidad_Disponible || item.existencia_actual || 0}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between sm:justify-end items-center">
+                                                    <span className="text-gray-500 sm:hidden">Reorden:</span>
+                                                    <span className="text-gray-600">
+                                                        {item.Punto_Reorden}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1 text-gray-500 text-center sm:text-right">
+                                                    {item.UnidadMedida_Simbolo || item.unidad_nombre}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -390,26 +435,26 @@ const ResumenBodegas = () => {
                 </div>
             </div>
 
-            {/* Resumen por Bodegas */}
+            {/* Resumen por Bodegas Mobile-First */}
             {resumenData && resumenData.por_bodega && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                <div className="mt-6 md:mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="p-4 md:px-6 md:py-4 border-b border-gray-200">
                         <div className="flex items-center">
-                            <FiBarChart2 className="h-5 w-5 text-blue-600 mr-2" />
-                            <h3 className="text-lg font-medium text-gray-900">Resumen por Bodegas</h3>
+                            <FiBarChart2 className="h-4 w-4 md:h-5 md:w-5 text-blue-600 mr-2" />
+                            <h3 className="text-base md:text-lg font-medium text-gray-900">Resumen por Bodegas</h3>
                         </div>
                     </div>
-                    <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="p-4 md:p-6">
+                        <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4">
                             {resumenData.por_bodega.map((bodega, index) => (
                                 <div key={index} className="border border-gray-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="font-medium text-gray-900">{bodega.Bodega_Nombre}</h4>
-                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                                        <h4 className="font-medium text-sm md:text-base text-gray-900 truncate">{bodega.Bodega_Nombre}</h4>
+                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded self-start">
                                             {bodega.Bodega_Tipo}
                                         </span>
                                     </div>
-                                    <div className="space-y-1 text-sm">
+                                    <div className="space-y-2 text-xs md:text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Items:</span>
                                             <span className="font-medium">{formatCantidad(bodega.Total_Items || 0)}</span>
@@ -420,7 +465,7 @@ const ResumenBodegas = () => {
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Valor:</span>
-                                            <span className="font-medium">{formatValor(bodega.Valor_Total_Inventario || 0)}</span>
+                                            <span className="font-medium text-xs md:text-sm break-all">{formatValor(bodega.Valor_Total_Inventario || 0)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Stock Bajo:</span>

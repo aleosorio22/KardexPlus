@@ -8,18 +8,19 @@ import {
     FiXCircle,
     FiChevronLeft,
     FiChevronRight,
-    FiPlus
+    FiPlus,
+    FiBarChart2,
+    FiTrendingUp,
+    FiActivity
 } from 'react-icons/fi';
 import { existenciaService } from '../services/existenciaService';
-import bodegaService from '../services/bodegaService';
-import categoryService from '../services/categoryService';
-import { itemBodegaParamService } from '../services/itemBodegaParamService';
+import { BodegaSelector, CategoriaSelector } from '../components/common';
+import DataCards from '../components/DataTable/DataCards';
+import ResponsiveDataView from '../components/DataTable/ResponsiveDataView';
 import ConfirmModal from '../components/ConfirmModal';
 
 const ExistenciasBodegas = () => {
     const [existencias, setExistencias] = useState([]);
-    const [bodegas, setBodegas] = useState([]);
-    const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
@@ -53,26 +54,8 @@ const ExistenciasBodegas = () => {
     });
 
     useEffect(() => {
-        cargarDatosIniciales();
-    }, []);
-
-    useEffect(() => {
         cargarExistencias();
     }, [filtros, paginacion.current_page, paginacion.per_page]);
-
-    const cargarDatosIniciales = async () => {
-        try {
-            const [bodegasData, categoriasData] = await Promise.all([
-                bodegaService.getAllBodegas(),
-                categoryService.getAllCategories()
-            ]);
-
-            setBodegas(Array.isArray(bodegasData?.data) ? bodegasData.data : []);
-            setCategorias(Array.isArray(categoriasData?.data) ? categoriasData.data : []);
-        } catch (error) {
-            console.error('Error cargando datos iniciales:', error);
-        }
-    };
 
     const cargarExistencias = async () => {
         try {
@@ -207,30 +190,124 @@ const ExistenciasBodegas = () => {
         }
     };
 
+    // Función para renderizar cada card de existencia
+    const renderExistenciaCard = (existencia, index) => {
+        const estadoStock = getEstadoStock(existencia);
+        const cantidad = existencia.Cantidad || existencia.cantidad_actual || 0;
+        const stockMin = existencia.Stock_Min_Bodega || existencia.stock_min_bodega || 0;
+
+        return (
+            <div className="space-y-4">
+                {/* Header del Item */}
+                <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 truncate">
+                            {existencia.Item_Nombre || existencia.item_nombre || 'N/A'}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-sm text-gray-500">
+                                SKU: {existencia.Item_Codigo_SKU || existencia.item_codigo || 'N/A'}
+                            </span>
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {existencia.CategoriaItem_Nombre || existencia.categoria_nombre || 'Sin categoría'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {/* Estado del Stock - Badge */}
+                    <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${estadoStock.clase} ml-3`}>
+                        <span className="mr-1">{estadoStock.icono}</span>
+                        {estadoStock.texto}
+                    </span>
+                </div>
+
+                {/* Información de Bodega */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                        <FiPackage className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">
+                                {existencia.Bodega_Nombre || existencia.bodega_nombre || 'N/A'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                ID: {existencia.Bodega_Id || existencia.bodega_id || 'N/A'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Información de Cantidad */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                        <p className="text-2xl font-bold text-gray-900">
+                            {formatCantidad(cantidad)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            {existencia.UnidadMedida_Simbolo || existencia.UnidadMedida_Prefijo || existencia.unidad_nombre || 'und'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">Cantidad Actual</p>
+                    </div>
+                    
+                    {stockMin > 0 && (
+                        <div className="text-center">
+                            <p className="text-lg font-semibold text-orange-600">
+                                {formatCantidad(stockMin)}
+                            </p>
+                            <p className="text-sm text-gray-500">mínimo</p>
+                            <p className="text-xs text-gray-400 mt-1">Stock Mínimo</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer con fecha */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <FiActivity className="h-3 w-3" />
+                        <span>Actualizado: {formatFecha(existencia)}</span>
+                    </div>
+                    
+                    {/* Indicador visual adicional */}
+                    <div className="flex items-center space-x-1">
+                        {cantidad === 0 && (
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        )}
+                        {cantidad > 0 && cantidad <= stockMin && (
+                            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                        )}
+                        {cantidad > stockMin && (
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="bg-white shadow-sm rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Existencias</h1>
-                        <p className="text-gray-600">Gestión de inventario por bodega</p>
+        <div className="space-y-4 md:space-y-6 pb-6 md:pb-8">
+            {/* Header Mobile-First */}
+            <div className="bg-white shadow-sm rounded-lg p-4 md:p-6">
+                <div className="space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
+                    <div className="text-center md:text-left">
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Existencias</h1>
+                        <p className="text-sm md:text-base text-gray-600 mt-1">Gestión de inventario por bodega</p>
                     </div>
                     <button
                         onClick={cargarExistencias}
                         disabled={loading}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2 disabled:opacity-50"
+                        className="w-full md:w-auto bg-blue-600 text-white px-4 py-3 md:py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center space-x-2 disabled:opacity-50 font-medium"
                     >
                         <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                         <span>Actualizar</span>
                     </button>
                 </div>
 
-                {/* Filtros */}
-                <form onSubmit={handleBuscar} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Filtros Mobile-First */}
+                <form onSubmit={handleBuscar} className="space-y-4">
+                    {/* Búsqueda - Siempre primera */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Buscar
+                            Buscar Items
                         </label>
                         <div className="relative">
                             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -238,79 +315,66 @@ const ExistenciasBodegas = () => {
                                 type="text"
                                 value={filtros.search}
                                 onChange={(e) => handleFiltroChange('search', e.target.value)}
-                                placeholder="Buscar item..."
-                                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Buscar por nombre, SKU o código..."
+                                className="pl-10 w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                             />
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Bodega
-                        </label>
-                        <select
+                    {/* Selectores - Grid responsive */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <BodegaSelector
+                            label="Filtrar por Almacén"
                             value={filtros.bodega_id}
-                            onChange={(e) => handleFiltroChange('bodega_id', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Todas las bodegas</option>
-                            {bodegas.map((bodega) => (
-                                <option key={bodega.Bodega_Id} value={bodega.Bodega_Id}>
-                                    {bodega.Bodega_Nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            onChange={(value) => handleFiltroChange('bodega_id', value)}
+                            showAllOption
+                            allOptionLabel="Todas las bodegas"
+                            placeholder="Seleccionar almacén..."
+                        />
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Categoría
-                        </label>
-                        <select
+                        <CategoriaSelector
+                            label="Filtrar por Categoría"
                             value={filtros.categoria_id}
-                            onChange={(e) => handleFiltroChange('categoria_id', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Todas las categorías</option>
-                            {categorias.map((categoria) => (
-                                <option key={categoria.CategoriaItem_Id} value={categoria.CategoriaItem_Id}>
-                                    {categoria.CategoriaItem_Nombre}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => handleFiltroChange('categoria_id', value)}
+                            showAllOption
+                            allOptionLabel="Todas las categorías"
+                            placeholder="Seleccionar categoría..."
+                        />
                     </div>
 
+                    {/* Estados - Checkboxes mejorados */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Estado
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            Filtros de Estado
                         </label>
-                        <div className="space-y-2">
-                            <label className="flex items-center">
+                        <div className="grid grid-cols-2 gap-3">
+                            <label className="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={filtros.stock_bajo}
                                     onChange={(e) => handleFiltroChange('stock_bajo', e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                                 />
-                                <span className="ml-2 text-sm text-gray-700">Stock bajo</span>
+                                <span className="ml-3 text-sm font-medium text-yellow-800">Stock Bajo</span>
                             </label>
-                            <label className="flex items-center">
+                            <label className="flex items-center p-3 bg-red-50 border border-red-200 rounded-lg cursor-pointer hover:bg-red-100 transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={filtros.sin_stock}
                                     onChange={(e) => handleFiltroChange('sin_stock', e.target.checked)}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                                 />
-                                <span className="ml-2 text-sm text-gray-700">Sin stock</span>
+                                <span className="ml-3 text-sm font-medium text-red-800">Sin Stock</span>
                             </label>
                         </div>
                     </div>
 
-                    <div className="md:col-span-2 lg:col-span-4 flex space-x-2">
+                    {/* Botones - Stack en móvil, inline en desktop */}
+                    <div className="flex flex-col md:flex-row gap-3 md:gap-2">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center space-x-2 disabled:opacity-50"
+                            className="flex-1 md:flex-none bg-blue-600 text-white px-6 py-3 md:py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center space-x-2 disabled:opacity-50 font-medium"
                         >
                             <FiSearch className="h-4 w-4" />
                             <span>Buscar</span>
@@ -318,27 +382,29 @@ const ExistenciasBodegas = () => {
                         <button
                             type="button"
                             onClick={limpiarFiltros}
-                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center space-x-2"
+                            className="flex-1 md:flex-none bg-gray-500 text-white px-6 py-3 md:py-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 flex items-center justify-center space-x-2 font-medium"
                         >
                             <FiFilter className="h-4 w-4" />
-                            <span>Limpiar</span>
+                            <span>Limpiar Filtros</span>
                         </button>
                     </div>
                 </form>
             </div>
 
-            {/* Métricas de Resumen */}
+            {/* Métricas Mobile-First */}
             {existencias.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
                     {/* Total Items */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiPackage className="h-8 w-8 text-blue-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <FiPackage className="h-6 w-6 md:h-7 md:w-7 text-blue-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Total Items</p>
-                                <p className="text-2xl font-bold text-gray-900">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Total Items</p>
+                                <p className="text-lg md:text-2xl font-bold text-gray-900">
                                     {existencias.length}
                                 </p>
                             </div>
@@ -346,14 +412,16 @@ const ExistenciasBodegas = () => {
                     </div>
 
                     {/* Items Sin Stock */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiXCircle className="h-8 w-8 text-red-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-red-100 rounded-full flex items-center justify-center">
+                                    <FiXCircle className="h-6 w-6 md:h-7 md:w-7 text-red-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Sin Stock</p>
-                                <p className="text-2xl font-bold text-red-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Sin Stock</p>
+                                <p className="text-lg md:text-2xl font-bold text-red-600">
                                     {existencias.filter(e => (e.Cantidad || e.cantidad_actual || 0) === 0).length}
                                 </p>
                             </div>
@@ -361,14 +429,16 @@ const ExistenciasBodegas = () => {
                     </div>
 
                     {/* Items Stock Crítico */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiAlertTriangle className="h-8 w-8 text-orange-600" />
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <FiAlertTriangle className="h-6 w-6 md:h-7 md:w-7 text-orange-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Stock Crítico</p>
-                                <p className="text-2xl font-bold text-orange-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Stock Crítico</p>
+                                <p className="text-lg md:text-2xl font-bold text-orange-600">
                                     {existencias.filter(e => {
                                         const estado = getEstadoStock(e);
                                         return estado.texto === 'Stock Crítico' || estado.texto === 'Punto Reorden';
@@ -378,15 +448,17 @@ const ExistenciasBodegas = () => {
                         </div>
                     </div>
 
-                    {/* Valor Total Estimado */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <FiRefreshCw className="h-8 w-8 text-green-600" />
+                    {/* Items Activos */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 col-span-2 md:col-span-1">
+                        <div className="flex flex-col items-center text-center md:flex-row md:text-left">
+                            <div className="flex-shrink-0 mb-2 md:mb-0">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-green-100 rounded-full flex items-center justify-center">
+                                    <FiTrendingUp className="h-6 w-6 md:h-7 md:w-7 text-green-600" />
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-500">Items Activos</p>
-                                <p className="text-2xl font-bold text-green-600">
+                            <div className="md:ml-4">
+                                <p className="text-xs md:text-sm font-medium text-gray-500">Items Activos</p>
+                                <p className="text-lg md:text-2xl font-bold text-green-600">
                                     {existencias.filter(e => (e.Cantidad || e.cantidad_actual || 0) > 0).length}
                                 </p>
                             </div>
@@ -405,126 +477,132 @@ const ExistenciasBodegas = () => {
                 </div>
             )}
 
-            {/* Tabla de Existencias */}
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Item
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Bodega
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Cantidad
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Última Actualización
-                                </th>
+            {/* Vista Responsive - Cards en móvil, Tabla en desktop */}
+            <ResponsiveDataView
+                data={existencias}
+                isLoading={loading}
+                renderCard={renderExistenciaCard}
+                emptyMessage="No se encontraron existencias"
+                emptyIcon={<FiPackage className="mx-auto h-12 w-12 text-gray-400 mb-4" />}
+                rowKeyField="Item_Id"
+                // Configuración de la tabla para desktop
+                columns={[
+                    {
+                        key: 'item',
+                        label: 'Item',
+                        render: (existencia) => (
+                            <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                    {existencia.Item_Nombre || existencia.item_nombre || 'N/A'}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    SKU: {existencia.Item_Codigo_SKU || existencia.item_codigo || 'N/A'}
+                                </div>
+                                <div className="text-xs text-blue-600">
+                                    {existencia.CategoriaItem_Nombre || existencia.categoria_nombre || 'Sin categoría'}
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'bodega',
+                        label: 'Bodega',
+                        render: (existencia) => (
+                            <div>
+                                <div className="text-sm text-gray-900">
+                                    {existencia.Bodega_Nombre || existencia.bodega_nombre || 'N/A'}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    ID: {existencia.Bodega_Id || existencia.bodega_id || 'N/A'}
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'cantidad',
+                        label: 'Cantidad',
+                        render: (existencia) => (
+                            <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                    {formatCantidad(existencia.Cantidad || existencia.cantidad_actual || 0)}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    {existencia.UnidadMedida_Simbolo || existencia.UnidadMedida_Prefijo || existencia.unidad_nombre || 'und'}
+                                </div>
+                                {(existencia.Stock_Min_Bodega || existencia.stock_min_bodega) && (
+                                    <div className="text-xs text-gray-400">
+                                        Min: {existencia.Stock_Min_Bodega || existencia.stock_min_bodega}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    },
+                    {
+                        key: 'estado',
+                        label: 'Estado',
+                        render: (existencia) => {
+                            const estadoStock = getEstadoStock(existencia);
+                            return (
+                                <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${estadoStock.clase}`}>
+                                    <span className="mr-1">{estadoStock.icono}</span>
+                                    {estadoStock.texto}
+                                </span>
+                            );
+                        }
+                    },
+                    {
+                        key: 'fecha',
+                        label: 'Última Actualización',
+                        render: (existencia) => (
+                            <span className="text-sm text-gray-500">
+                                {formatFecha(existencia)}
+                            </span>
+                        )
+                    }
+                ]}
+                // Configuración de paginación personalizada si usas paginación del backend
+                pagination={false} // Deshabilitamos la paginación del componente
+            />
 
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-12 text-center">
-                                        <div className="flex items-center justify-center">
-                                            <FiRefreshCw className="animate-spin h-6 w-6 text-blue-600 mr-2" />
-                                            <span className="text-gray-600">Cargando existencias...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : existencias.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-12 text-center">
-                                        <div className="text-gray-500">
-                                            <FiPackage className="mx-auto h-12 w-12 mb-4" />
-                                            <p>No se encontraron existencias</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                existencias.map((existencia, index) => {
-                                    const estadoStock = getEstadoStock(existencia);
-                                    return (
-                                        <tr key={index} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {existencia.Item_Nombre || existencia.item_nombre || 'N/A'}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        SKU: {existencia.Item_Codigo_SKU || existencia.item_codigo || 'N/A'}
-                                                    </div>
-                                                    <div className="text-xs text-blue-600">
-                                                        {existencia.CategoriaItem_Nombre || existencia.categoria_nombre || 'Sin categoría'}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">
-                                                    {existencia.Bodega_Nombre || existencia.bodega_nombre || 'N/A'}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    ID: {existencia.Bodega_Id || existencia.bodega_id || 'N/A'}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {formatCantidad(existencia.Cantidad || existencia.cantidad_actual || 0)}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {existencia.UnidadMedida_Simbolo || existencia.UnidadMedida_Prefijo || existencia.unidad_nombre || 'und'}
-                                                </div>
-                                                {(existencia.Stock_Min_Bodega || existencia.stock_min_bodega) && (
-                                                    <div className="text-xs text-gray-400">
-                                                        Min: {existencia.Stock_Min_Bodega || existencia.stock_min_bodega}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${estadoStock.clase}`}>
-                                                    <span className="mr-1">{estadoStock.icono}</span>
-                                                    {estadoStock.texto}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {formatFecha(existencia)}
-                                            </td>
+            {/* Paginación del Backend */}
+            {paginacion.total_pages > 1 && (
+                <div className="bg-white rounded-lg shadow-sm">
+                    <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
+                        {/* Mobile Paginación */}
+                        <div className="block sm:hidden">
+                            <div className="text-center mb-4">
+                                <p className="text-sm text-gray-600">
+                                    Página <span className="font-semibold text-gray-900">{paginacion.current_page}</span> de{' '}
+                                    <span className="font-semibold text-gray-900">{paginacion.total_pages}</span>
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {paginacion.total_records} registros en total
+                                </p>
+                            </div>
 
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            <div className="flex justify-center space-x-3">
+                                <button
+                                    onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
+                                    disabled={!paginacion.has_prev}
+                                    className="flex items-center px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm min-w-[100px] justify-center"
+                                >
+                                    <FiChevronLeft className="h-4 w-4 mr-1" />
+                                    Anterior
+                                </button>
 
-                {/* Paginación */}
-                {paginacion.total_pages > 1 && (
-                    <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                        <div className="flex-1 flex justify-between sm:hidden">
-                            <button
-                                onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
-                                disabled={!paginacion.has_prev}
-                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Anterior
-                            </button>
-                            <button
-                                onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
-                                disabled={!paginacion.has_next}
-                                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Siguiente
-                            </button>
+                                <button
+                                    onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
+                                    disabled={!paginacion.has_next}
+                                    className="flex items-center px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm min-w-[100px] justify-center"
+                                >
+                                    Siguiente
+                                    <FiChevronRight className="h-4 w-4 ml-1" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+
+                        {/* Desktop Paginación */}
+                        <div className="hidden sm:flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-700">
                                     Mostrando <span className="font-medium">{((paginacion.current_page - 1) * paginacion.per_page) + 1}</span> a{' '}
@@ -534,31 +612,34 @@ const ExistenciasBodegas = () => {
                                     <span className="font-medium">{paginacion.total_records}</span> resultados
                                 </p>
                             </div>
-                            <div>
-                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                    <button
-                                        onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
-                                        disabled={!paginacion.has_prev}
-                                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                                    >
-                                        <FiChevronLeft className="h-5 w-5" />
-                                    </button>
-                                    <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+
+                            <div className="flex items-center space-x-1">
+                                <button
+                                    onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page - 1 }))}
+                                    disabled={!paginacion.has_prev}
+                                    className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                                >
+                                    <FiChevronLeft className="w-4 h-4 text-gray-600" />
+                                </button>
+
+                                <div className="flex items-center px-3">
+                                    <span className="text-sm text-gray-700">
                                         Página {paginacion.current_page} de {paginacion.total_pages}
                                     </span>
-                                    <button
-                                        onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
-                                        disabled={!paginacion.has_next}
-                                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                                    >
-                                        <FiChevronRight className="h-5 w-5" />
-                                    </button>
-                                </nav>
+                                </div>
+
+                                <button
+                                    onClick={() => setPaginacion(prev => ({ ...prev, current_page: prev.current_page + 1 }))}
+                                    disabled={!paginacion.has_next}
+                                    className="p-2 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                                >
+                                    <FiChevronRight className="w-4 h-4 text-gray-600" />
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
 
 

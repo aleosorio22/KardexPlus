@@ -149,7 +149,7 @@ export const existenciaService = {
      */
     async getItemsSinStock(bodegaId = null) {
         try {
-            const params = bodegaId ? `?bodega_id=${bodegaId}` : '';
+            const params = bodegaId ? `?bodegaId=${bodegaId}` : '';
             const response = await axios.get(`${API_BASE_URL}/existencias/sin-stock${params}`, getAuthHeaders());
             return response.data;
             

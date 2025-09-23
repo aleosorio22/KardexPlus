@@ -125,13 +125,9 @@ const MovimientosBodegas = () => {
                 limit: 1000 // Cargar muchos registros, la paginación será del lado cliente
             });
             
-            console.log('📦 Movimientos cargados:', response);
-            
             // Los datos están directamente en response.data
             const movimientos = response.data || [];
             setMovimientos(movimientos);
-            
-            console.log(`✅ ${movimientos.length} movimientos cargados exitosamente`);
 
         } catch (error) {
             console.error('❌ Error cargando movimientos:', error);
@@ -550,7 +546,7 @@ const MovimientosBodegas = () => {
             <div className="bg-white shadow-sm rounded-lg p-4 md:p-6">
                 <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
                     <div className="text-center md:text-left">
-                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">📦 Movimientos</h1>
+                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Movimientos</h1>
                         <p className="text-sm md:text-base text-gray-600">Gestión de inventario</p>
                     </div>
                     
