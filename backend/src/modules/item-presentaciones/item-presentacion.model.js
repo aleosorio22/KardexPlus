@@ -30,7 +30,7 @@ class ItemPresentacionModel {
         }
 
         const [result] = await db.execute(`
-            INSERT INTO items_presentaciones (
+            INSERT INTO Items_Presentaciones (
                 Item_Id,
                 Presentacion_Nombre,
                 Cantidad_Base,
@@ -69,7 +69,7 @@ class ItemPresentacionModel {
                 c.CategoriaItem_Nombre,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
