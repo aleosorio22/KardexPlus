@@ -21,7 +21,6 @@ export const PermissionsProvider = ({ children }) => {
     // Cargar permisos del usuario actual
     const loadUserPermissions = async () => {
         if (!token || !user) {
-            console.log('PermissionsContext - No token or user, skipping permissions load');
             setPermissions([]);
             setPermissionsByModule({});
             setLoading(false);
@@ -31,7 +30,6 @@ export const PermissionsProvider = ({ children }) => {
         try {
             setLoading(true);
             setError(null);
-            console.log('PermissionsContext - Loading permissions for user:', user);
 
             const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3499/api';
             const response = await fetch(`${API_BASE_URL}/permissions/me`, {
@@ -46,12 +44,10 @@ export const PermissionsProvider = ({ children }) => {
             }
 
             const data = await response.json();
-            console.log('PermissionsContext - API Response:', data);
             
             if (data.success) {
                 setPermissions(data.data.permissions || []);
                 setPermissionsByModule(data.data.permissionsByModule || {});
-                console.log('PermissionsContext - Permissions loaded:', data.data.permissions);
             } else {
                 throw new Error(data.message || 'Error al cargar permisos');
             }

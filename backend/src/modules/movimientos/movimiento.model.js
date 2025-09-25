@@ -3,6 +3,66 @@ const db = require('../../core/config/database');
 class MovimientoModel {
     
     // =======================================
+    // FUNCIÓN AUXILIAR PARA CÁLCULOS
+    // =======================================
+    
+    /**
+     * Calcular cantidad en unidades base para un item
+     * @param {object} connection - Conexión a la base de datos
+     * @param {object} item - Item con datos de presentación
+     * @returns {object} - Datos calculados del item
+     */
+    static async calcularCantidadItem(connection, item) {
+        if (!item.Item_Id) {
+            throw new Error('Cada item debe tener ID válido');
+        }
+
+        // Determinar si es movimiento por presentación
+        const esPorPresentacion = !!(item.Item_Presentaciones_Id && item.Cantidad_Presentacion);
+        
+        let cantidadFinal = item.Cantidad || 0; // Cantidad por defecto
+        
+        // Si es movimiento por presentación, calcular cantidad automáticamente
+        if (esPorPresentacion) {
+            if (!item.Cantidad_Presentacion || item.Cantidad_Presentacion <= 0) {
+                throw new Error(`Item ${item.Item_Id}: Cantidad_Presentacion debe ser mayor a 0 para movimientos por presentación`);
+            }
+            
+            // Obtener la cantidad base de la presentación
+            const [presentacionRows] = await connection.execute(
+                'SELECT Cantidad_Base, Presentacion_Nombre FROM items_presentaciones WHERE Item_Presentaciones_Id = ?',
+                [item.Item_Presentaciones_Id]
+            );
+            
+            if (presentacionRows.length === 0) {
+                throw new Error(`No se encontró la presentación con ID ${item.Item_Presentaciones_Id}`);
+            }
+            
+            const cantidadBase = presentacionRows[0].Cantidad_Base;
+            const presentacionNombre = presentacionRows[0].Presentacion_Nombre;
+            cantidadFinal = item.Cantidad_Presentacion * cantidadBase;
+            
+            console.log(`🧮 Cálculo automático para item ${item.Item_Id} (${presentacionNombre}):`, {
+                Cantidad_Presentacion: item.Cantidad_Presentacion,
+                Cantidad_Base: cantidadBase,
+                Cantidad_Calculada: cantidadFinal,
+                Item_Presentaciones_Id: item.Item_Presentaciones_Id
+            });
+        } else {
+            // Para movimientos normales, validar que tenga cantidad
+            if (!cantidadFinal || cantidadFinal <= 0) {
+                throw new Error(`Item ${item.Item_Id}: Cantidad debe ser mayor a 0`);
+            }
+        }
+        
+        return {
+            ...item,
+            cantidadFinal,
+            esPorPresentacion
+        };
+    }
+    
+    // =======================================
     // MÉTODOS DE CONSULTA
     // =======================================
 
@@ -69,7 +129,7 @@ class MovimientoModel {
                 INNER JOIN Usuarios u ON m.Usuario_Id = u.Usuario_Id
                 LEFT JOIN Bodegas bo ON m.Origen_Bodega_Id = bo.Bodega_Id
                 LEFT JOIN Bodegas bd ON m.Destino_Bodega_Id = bd.Bodega_Id
-                LEFT JOIN Movimientos_Detalle md ON m.Movimiento_Id = md.Movimiento_Id
+                LEFT JOIN movimientos_detalle md ON m.Movimiento_Id = md.Movimiento_Id
                 ${whereClause}
                 GROUP BY m.Movimiento_Id
                 ORDER BY m.Fecha DESC
@@ -218,11 +278,20 @@ class MovimientoModel {
                     c.CategoriaItem_Nombre,
                     um.UnidadMedida_Nombre,
                     um.UnidadMedida_Prefijo as Item_Unidad_Medida,
+                    -- Campos de presentación
+                    md.Item_Presentaciones_Id,
+                    md.Cantidad_Presentacion,
+                    (md.Item_Presentaciones_Id IS NOT NULL) as Es_Movimiento_Por_Presentacion,
+                    ip.Presentacion_Nombre,
+                    ip.Cantidad_Base as Factor_Conversion,
+                    um.UnidadMedida_Nombre as Presentacion_Unidad_Nombre,
+                    um.UnidadMedida_Prefijo as Presentacion_Unidad_Prefijo,
                     (md.Cantidad * i.Item_Costo_Unitario) as Valor_Total
-                FROM Movimientos_Detalle md
+                FROM movimientos_detalle md
                 INNER JOIN Items i ON md.Item_Id = i.Item_Id
                 INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
                 INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
+                LEFT JOIN items_presentaciones ip ON md.Item_Presentaciones_Id = ip.Item_Presentaciones_Id
                 WHERE md.Movimiento_Id = ?
                 ORDER BY i.Item_Nombre
             `;
@@ -288,20 +357,35 @@ class MovimientoModel {
 
             // Crear el detalle y actualizar existencias
             for (const item of items) {
-                if (!item.Item_Id || !item.Cantidad || item.Cantidad <= 0) {
-                    throw new Error('Cada item debe tener ID y cantidad válida');
-                }
-
-                // Insertar detalle (el trigger se encargará de actualizar existencias automáticamente)
+                // Calcular cantidad usando función auxiliar
+                const itemCalculado = await this.calcularCantidadItem(connection, item);
+                
+                console.log(`🏗️ MovimientoModel: Insertando detalle para item ${item.Item_Id}:`, {
+                    Item_Presentaciones_Id: itemCalculado.Item_Presentaciones_Id || null,
+                    Cantidad_Presentacion: itemCalculado.Cantidad_Presentacion || null,
+                    Es_Movimiento_Por_Presentacion: itemCalculado.esPorPresentacion,
+                    Cantidad_Final: itemCalculado.cantidadFinal
+                });
+                
+                // Insertar detalle con soporte para presentaciones
                 const detalleQuery = `
-                    INSERT INTO Movimientos_Detalle (Movimiento_Id, Item_Id, Cantidad)
-                    VALUES (?, ?, ?)
+                    INSERT INTO movimientos_detalle (
+                        Movimiento_Id, 
+                        Item_Id, 
+                        Item_Presentaciones_Id,
+                        Cantidad, 
+                        Cantidad_Presentacion,
+                        Es_Movimiento_Por_Presentacion
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                 `;
                 
                 await connection.execute(detalleQuery, [
                     movimientoId, 
-                    item.Item_Id, 
-                    item.Cantidad
+                    itemCalculado.Item_Id, 
+                    itemCalculado.Item_Presentaciones_Id || null,
+                    itemCalculado.cantidadFinal, // Cantidad calculada en unidades base
+                    itemCalculado.Cantidad_Presentacion || null,
+                    itemCalculado.esPorPresentacion ? 1 : 0
                 ]);
             }
 
@@ -384,14 +468,23 @@ class MovimientoModel {
             for (const item of items) {
                 // Insertar detalle (el trigger se encargará de actualizar existencias automáticamente)
                 const detalleQuery = `
-                    INSERT INTO Movimientos_Detalle (Movimiento_Id, Item_Id, Cantidad)
-                    VALUES (?, ?, ?)
+                    INSERT INTO movimientos_detalle (
+                        Movimiento_Id, 
+                        Item_Id, 
+                        Cantidad,
+                        Item_Presentaciones_Id,
+                        Cantidad_Presentacion,
+                        Es_Movimiento_Por_Presentacion
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                 `;
                 
                 await connection.execute(detalleQuery, [
                     movimientoId, 
                     item.Item_Id, 
-                    item.Cantidad
+                    item.Cantidad,
+                    item.Item_Presentaciones_Id || null,
+                    item.Cantidad_Presentacion || null,
+                    item.Es_Movimiento_Por_Presentacion || false
                 ]);
             }
 
@@ -478,14 +571,23 @@ class MovimientoModel {
             for (const item of items) {
                 // Insertar detalle (el trigger se encargará de actualizar existencias automáticamente)
                 const detalleQuery = `
-                    INSERT INTO Movimientos_Detalle (Movimiento_Id, Item_Id, Cantidad)
-                    VALUES (?, ?, ?)
+                    INSERT INTO movimientos_detalle (
+                        Movimiento_Id, 
+                        Item_Id, 
+                        Cantidad,
+                        Item_Presentaciones_Id,
+                        Cantidad_Presentacion,
+                        Es_Movimiento_Por_Presentacion
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                 `;
                 
                 await connection.execute(detalleQuery, [
                     movimientoId, 
                     item.Item_Id, 
-                    item.Cantidad
+                    item.Cantidad,
+                    item.Item_Presentaciones_Id || null,
+                    item.Cantidad_Presentacion || null,
+                    item.Es_Movimiento_Por_Presentacion || false
                 ]);
             }
 
@@ -563,14 +665,23 @@ class MovimientoModel {
                 if (diferencia !== 0) {
                     // Insertar detalle con la cantidad final (el trigger se encarga de actualizar existencias)
                     const detalleQuery = `
-                        INSERT INTO Movimientos_Detalle (Movimiento_Id, Item_Id, Cantidad)
-                        VALUES (?, ?, ?)
+                        INSERT INTO movimientos_detalle (
+                            Movimiento_Id, 
+                            Item_Id, 
+                            Cantidad,
+                            Item_Presentaciones_Id,
+                            Cantidad_Presentacion,
+                            Es_Movimiento_Por_Presentacion
+                        ) VALUES (?, ?, ?, ?, ?, ?)
                     `;
                     
                     await connection.execute(detalleQuery, [
                         movimientoId, 
                         item.Item_Id, 
-                        item.Cantidad // Para ajustes, guardamos la cantidad final que se quiere
+                        item.Cantidad, // Para ajustes, guardamos la cantidad final que se quiere
+                        item.Item_Presentaciones_Id || null,
+                        item.Cantidad_Presentacion || null,
+                        item.Es_Movimiento_Por_Presentacion || false
                     ]);
                 }
             }
