@@ -30,7 +30,7 @@ class MovimientoModel {
             
             // Obtener la cantidad base de la presentación
             const [presentacionRows] = await connection.execute(
-                'SELECT Cantidad_Base, Presentacion_Nombre FROM items_presentaciones WHERE Item_Presentaciones_Id = ?',
+                'SELECT Cantidad_Base, Presentacion_Nombre FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
                 [item.Item_Presentaciones_Id]
             );
             
@@ -291,7 +291,7 @@ class MovimientoModel {
                 INNER JOIN Items i ON md.Item_Id = i.Item_Id
                 INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
                 INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
-                LEFT JOIN items_presentaciones ip ON md.Item_Presentaciones_Id = ip.Item_Presentaciones_Id
+                LEFT JOIN Items_Presentaciones ip ON md.Item_Presentaciones_Id = ip.Item_Presentaciones_Id
                 WHERE md.Movimiento_Id = ?
                 ORDER BY i.Item_Nombre
             `;
