@@ -18,9 +18,7 @@ const TablaItems = ({
         onItemAdd(producto);
     };
 
-    const handleCantidadChange = (itemId, cantidad, stockActual) => {
-        onItemUpdate(itemId, cantidad, stockActual);
-    };
+    // REMOVED: handleCantidadChange ya que ItemSelector maneja directamente las cantidades y presentaciones
 
     const getHeaderLabels = () => {
         switch (tipoMovimiento) {
@@ -211,7 +209,16 @@ const TablaItems = ({
                                 <ItemSelector
                                     key={item.Item_Id}
                                     producto={item}
-                                    onCantidadChange={handleCantidadChange}
+                                    onCantidadChange={(itemId, cantidad, stockActual, datosItem) => {
+                                        console.log(`🔄 TablaItems - Recibido de ItemSelector:`, {
+                                            itemId,
+                                            cantidad,
+                                            stockActual,
+                                            datosItem
+                                        });
+                                        // Pasar los datos completos al componente padre (CrearMovimiento)
+                                        onItemUpdate(itemId, cantidad, stockActual, datosItem);
+                                    }}
                                     onRemove={onItemRemove}
                                     tipoMovimiento={tipoMovimiento}
                                     bodegaOrigenId={bodegaOrigenId}

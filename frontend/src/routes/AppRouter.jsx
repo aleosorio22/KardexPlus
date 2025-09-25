@@ -40,9 +40,6 @@ function AppRouter() {
     return <LoadingSpinner className="h-screen" />;
   }
 
-  console.log('AppRouter - Auth state:', auth);
-  console.log('AppRouter - Loading state:', loading);
-
   return (
     <ErrorBoundary>
       <BrowserRouter>

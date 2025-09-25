@@ -9,7 +9,8 @@ import {
     FiUser, 
     FiCalendar,
     FiFileText,
-    FiHash
+    FiHash,
+    FiBox
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import TicketPOS from '../components/TicketPOS/TicketPOS';
@@ -23,6 +24,31 @@ const ResumenMovimiento = () => {
 
     // Obtener datos del movimiento desde el state de navegación
     const { movimientoData, itemsMovimiento, tipo, bodegas, usuarioLogueado } = location.state || {};
+
+    // Debug: verificar datos recibidos
+    useEffect(() => {
+        console.log('ResumenMovimiento - datos recibidos:', {
+            itemsMovimiento,
+            primerItem: itemsMovimiento?.[0]
+        });
+        
+        // Debug específico para presentaciones
+        if (itemsMovimiento && itemsMovimiento.length > 0) {
+            itemsMovimiento.forEach((item, index) => {
+                console.log(`📄 ResumenMovimiento: Item ${index + 1} - TODOS LOS CAMPOS:`, item);
+                console.log(`📄 ResumenMovimiento: Item ${index + 1} - CAMPOS DE PRESENTACIÓN:`, {
+                    Item_Nombre: item.Item_Nombre,
+                    Item_Descripcion: item.Item_Descripcion,
+                    Es_Movimiento_Por_Presentacion: item.Es_Movimiento_Por_Presentacion,
+                    Presentacion_Nombre: item.Presentacion_Nombre,
+                    Presentacion_Unidad_Prefijo: item.Presentacion_Unidad_Prefijo,
+                    Factor_Conversion: item.Factor_Conversion,
+                    Cantidad_Presentacion: item.Cantidad_Presentacion,
+                    Item_Presentaciones_Id: item.Item_Presentaciones_Id
+                });
+            });
+        }
+    }, [itemsMovimiento]);
 
     useEffect(() => {
         // Si no hay datos, redirigir de vuelta
@@ -90,7 +116,17 @@ const ResumenMovimiento = () => {
             return sum + (precio * cantidad);
         }, 0);
 
-        return { totalItems, cantidadTotal, valorTotal };
+        // Calcular estadísticas de presentaciones
+        const itemsConPresentacion = itemsMovimiento.filter(item => item.Es_Movimiento_Por_Presentacion);
+        const itemsUnidadBase = itemsMovimiento.filter(item => !item.Es_Movimiento_Por_Presentacion);
+
+        return { 
+            totalItems, 
+            cantidadTotal, 
+            valorTotal,
+            itemsConPresentacion: itemsConPresentacion.length,
+            itemsUnidadBase: itemsUnidadBase.length
+        };
     };
 
     const totales = calcularTotales();
@@ -130,11 +166,28 @@ const ResumenMovimiento = () => {
         setConfirmando(true);
         
         try {
-            // Preparar items válidos para el envío
+            // Preparar items válidos para el envío, incluyendo datos de presentación
             const itemsValidos = itemsMovimiento.map(item => ({
                 Item_Id: parseInt(item.Item_Id),
-                Cantidad: parseFloat(item.Cantidad)
+                Cantidad: parseFloat(item.Cantidad),
+                // Incluir datos de presentación si existen
+                Item_Presentaciones_Id: item.Item_Presentaciones_Id || null,
+                Cantidad_Presentacion: item.Cantidad_Presentacion ? parseFloat(item.Cantidad_Presentacion) : null,
+                Es_Movimiento_Por_Presentacion: item.Es_Movimiento_Por_Presentacion || false
             }));
+
+            console.log('📄 ResumenMovimiento: Items preparados para envío al backend:', itemsValidos);
+            
+            // Log específico para items con presentación
+            itemsValidos.forEach((item, index) => {
+                console.log(`📄 ResumenMovimiento: Item ${index + 1} para envío:`, {
+                    Item_Id: item.Item_Id,
+                    Cantidad: item.Cantidad,
+                    Item_Presentaciones_Id: item.Item_Presentaciones_Id,
+                    Cantidad_Presentacion: item.Cantidad_Presentacion,
+                    Es_Movimiento_Por_Presentacion: item.Es_Movimiento_Por_Presentacion
+                });
+            });
 
             let response;
             
@@ -319,11 +372,27 @@ const ResumenMovimiento = () => {
                                         <span className="font-medium">{totales.totalItems}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Cantidad Total:</span>
+                                        <span className="text-gray-600">Cantidad Total (Base):</span>
                                         <span className="font-medium">{totales.cantidadTotal.toLocaleString()}</span>
                                     </div>
+                                    {(totales.itemsConPresentacion > 0 || totales.itemsUnidadBase > 0) && (
+                                        <div className="space-y-1 pt-1 border-t border-gray-100">
+                                            {totales.itemsConPresentacion > 0 && (
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-purple-600">• Con presentación:</span>
+                                                    <span className="text-purple-600">{totales.itemsConPresentacion} items</span>
+                                                </div>
+                                            )}
+                                            {totales.itemsUnidadBase > 0 && (
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-gray-500">• Unidad base:</span>
+                                                    <span className="text-gray-500">{totales.itemsUnidadBase} items</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     {totales.valorTotal > 0 && (
-                                        <div className="flex justify-between text-sm">
+                                        <div className="flex justify-between text-sm pt-1 border-t border-gray-100">
                                             <span className="text-gray-600">Valor Total:</span>
                                             <span className="font-medium">
                                                 ${totales.valorTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
@@ -339,9 +408,21 @@ const ResumenMovimiento = () => {
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-lg shadow-sm border">
                             <div className="p-6 border-b">
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    Items del Movimiento ({itemsMovimiento.length})
-                                </h3>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">
+                                            Items del Movimiento ({itemsMovimiento.length})
+                                        </h3>
+                                        {totales.itemsConPresentacion > 0 && (
+                                            <div className="flex items-center space-x-1 mt-1">
+                                                <FiBox className="h-3 w-3 text-purple-500" />
+                                                <span className="text-xs text-purple-600">
+                                                    {totales.itemsConPresentacion} con presentaciones personalizadas
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             
                             <div className="overflow-x-auto">
@@ -357,8 +438,8 @@ const ResumenMovimiento = () => {
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Cantidad
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Unidad
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Unidad/Presentación
                                             </th>
                                             {totales.valorTotal > 0 && (
                                                 <>
@@ -388,11 +469,44 @@ const ResumenMovimiento = () => {
                                                 <td className="px-6 py-4 text-sm text-gray-900">
                                                     {item.Item_Codigo}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">
-                                                    {parseFloat(item.Cantidad).toLocaleString()}
+                                                <td className="px-6 py-4 text-right">
+                                                    {item.Es_Movimiento_Por_Presentacion && item.Cantidad_Presentacion ? (
+                                                        <div className="space-y-1">
+                                                            <div className="text-sm font-medium text-purple-600">
+                                                                {parseFloat(item.Cantidad_Presentacion).toLocaleString()} 
+                                                                <span className="text-xs ml-1">
+                                                                    {parseFloat(item.Cantidad_Presentacion) === 1 ? 'unidad' : 'unidades'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                = {parseFloat(item.Cantidad).toLocaleString()} {item.UnidadMedida_Prefijo}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {parseFloat(item.Cantidad).toLocaleString()}
+                                                            <span className="text-xs text-gray-500 ml-1">
+                                                                {item.UnidadMedida_Prefijo}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 text-right">
-                                                    {item.UnidadMedida_Prefijo}
+                                                <td className="px-6 py-4">
+                                                    {item.Es_Movimiento_Por_Presentacion && item.Presentacion_Nombre ? (
+                                                        <div className="space-y-1">
+                                                            <div className="text-sm font-medium text-purple-600 flex items-center">
+                                                                <FiBox className="h-3 w-3 mr-1" />
+                                                                {item.Presentacion_Nombre}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500">
+                                                                Factor: {item.Factor_Conversion}x → {item.UnidadMedida_Prefijo}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-gray-900">
+                                                            <span className="text-gray-600">Unidad Base:</span> {item.UnidadMedida_Prefijo}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 {totales.valorTotal > 0 && (
                                                     <>

@@ -69,7 +69,7 @@ class ItemPresentacionModel {
                 c.CategoriaItem_Nombre,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
@@ -99,7 +99,7 @@ class ItemPresentacionModel {
                 c.CategoriaItem_Nombre,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
@@ -127,7 +127,7 @@ class ItemPresentacionModel {
                 i.Item_Costo_Unitario,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
             WHERE ip.Item_Id = ?
@@ -166,7 +166,7 @@ class ItemPresentacionModel {
         }
 
         const [result] = await db.execute(`
-            UPDATE items_presentaciones SET
+            UPDATE Items_Presentaciones SET
                 Item_Id = ?,
                 Presentacion_Nombre = ?,
                 Cantidad_Base = ?,
@@ -194,7 +194,7 @@ class ItemPresentacionModel {
      */
     static async delete(id) {
         const [result] = await db.execute(
-            'DELETE FROM items_presentaciones WHERE Item_Presentaciones_Id = ?',
+            'DELETE FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
             [id]
         );
         
@@ -224,12 +224,12 @@ class ItemPresentacionModel {
                 c.CategoriaItem_Nombre,
                 um.UnidadMedida_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
         `;
-        let countQuery = 'SELECT COUNT(*) as total FROM items_presentaciones ip INNER JOIN Items i ON ip.Item_Id = i.Item_Id';
+        let countQuery = 'SELECT COUNT(*) as total FROM Items_Presentaciones ip INNER JOIN Items i ON ip.Item_Id = i.Item_Id';
         let params = [];
         let whereConditions = [];
 
@@ -269,7 +269,7 @@ class ItemPresentacionModel {
      * @returns {Promise<number>} - Número total de presentaciones
      */
     static async count() {
-        const [result] = await db.execute('SELECT COUNT(*) as total FROM items_presentaciones');
+        const [result] = await db.execute('SELECT COUNT(*) as total FROM Items_Presentaciones');
         return result[0].total;
     }
 
@@ -280,7 +280,7 @@ class ItemPresentacionModel {
      */
     static async exists(id) {
         const [result] = await db.execute(
-            'SELECT COUNT(*) as count FROM items_presentaciones WHERE Item_Presentaciones_Id = ?',
+            'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
             [id]
         );
         return result[0].count > 0;
@@ -294,7 +294,7 @@ class ItemPresentacionModel {
      * @returns {Promise<boolean>} - true si existe, false si no
      */
     static async existsByItemAndPresentacion(itemId, presentacionNombre, excludeId = null) {
-        let query = 'SELECT COUNT(*) as count FROM items_presentaciones WHERE Item_Id = ? AND Presentacion_Nombre = ?';
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Id = ? AND Presentacion_Nombre = ?';
         let params = [itemId, presentacionNombre];
         
         if (excludeId) {
@@ -313,7 +313,7 @@ class ItemPresentacionModel {
      * @returns {Promise<boolean>} - true si existe, false si no
      */
     static async existsBySKU(sku, excludeId = null) {
-        let query = 'SELECT COUNT(*) as count FROM items_presentaciones WHERE Item_Presentacion_CodigoSKU = ?';
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentacion_CodigoSKU = ?';
         let params = [sku];
         
         if (excludeId) {
@@ -332,7 +332,7 @@ class ItemPresentacionModel {
      * @returns {Promise<boolean>} - true si existe, false si no
      */
     static async existsByBarcode(barcode, excludeId = null) {
-        let query = 'SELECT COUNT(*) as count FROM items_presentaciones WHERE Item_Presentaciones_CodigoBarras = ?';
+        let query = 'SELECT COUNT(*) as count FROM Items_Presentaciones WHERE Item_Presentaciones_CodigoBarras = ?';
         let params = [barcode];
         
         if (excludeId) {
@@ -362,7 +362,7 @@ class ItemPresentacionModel {
                 ip.Item_Presentaciones_Costo,
                 i.Item_Nombre,
                 um.UnidadMedida_Prefijo
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
             INNER JOIN Items i ON ip.Item_Id = i.Item_Id
             INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
             WHERE i.Item_Nombre LIKE ? 
@@ -386,7 +386,7 @@ class ItemPresentacionModel {
                 COUNT(DISTINCT ip.Item_Id) as itemsConPresentaciones,
                 AVG(ip.Item_Presentaciones_Costo) as costoPromedio,
                 AVG(ip.Cantidad_Base) as cantidadBasePromedio
-            FROM items_presentaciones ip
+            FROM Items_Presentaciones ip
         `);
         return stats[0];
     }

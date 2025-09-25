@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3499/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -15,6 +15,29 @@ const getAuthHeaders = () => {
             'Content-Type': 'application/json'
         }
     };
+};
+
+// Función auxiliar para validar items con presentaciones
+const validateItems = (items) => {
+    if (!items || items.length === 0) {
+        throw new Error('Debe especificar al menos un item');
+    }
+
+    items.forEach((item, index) => {
+        if (!item.Item_Id) {
+            throw new Error(`Item ${index + 1}: ID del item es requerido`);
+        }
+
+        // Si tiene presentación, debe tener Cantidad_Presentacion
+        if (item.Item_Presentaciones_Id && (!item.Cantidad_Presentacion || item.Cantidad_Presentacion <= 0)) {
+            throw new Error(`Item ${index + 1}: Cantidad_Presentacion debe ser mayor a 0 cuando se especifica presentación`);
+        }
+
+        // Si no tiene presentación, debe tener Cantidad
+        if (!item.Item_Presentaciones_Id && (!item.Cantidad || item.Cantidad <= 0)) {
+            throw new Error(`Item ${index + 1}: Cantidad debe ser mayor a 0 para movimientos sin presentación`);
+        }
+    });
 };
 
 export const movimientoService = {
@@ -86,7 +109,12 @@ export const movimientoService = {
      * @param {string} movimientoData.Recepcionista - Nombre del recepcionista
      * @param {string} movimientoData.Motivo - Motivo del movimiento
      * @param {string} movimientoData.Observaciones - Observaciones adicionales
-     * @param {Array} items - Array de items con Item_Id y Cantidad
+     * @param {Array} items - Array de items
+     * @param {number} items[].Item_Id - ID del item (requerido)
+     * @param {number} items[].Cantidad - Cantidad en unidades base (opcional si hay presentación)
+     * @param {number} items[].Item_Presentaciones_Id - ID de la presentación (opcional)
+     * @param {number} items[].Cantidad_Presentacion - Cantidad de presentaciones (requerido si Item_Presentaciones_Id)
+     * @param {boolean} items[].Es_Movimiento_Por_Presentacion - Calculado automáticamente por el backend
      */
     async crearEntrada(movimientoData, items) {
         try {
@@ -97,6 +125,23 @@ export const movimientoService = {
             if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
+
+            // Validación de items con presentaciones
+            items.forEach((item, index) => {
+                if (!item.Item_Id) {
+                    throw new Error(`Item ${index + 1}: ID del item es requerido`);
+                }
+
+                // Si tiene presentación, debe tener Cantidad_Presentacion
+                if (item.Item_Presentaciones_Id && !item.Cantidad_Presentacion) {
+                    throw new Error(`Item ${index + 1}: Cantidad_Presentacion es requerida cuando se especifica presentación`);
+                }
+
+                // Si no tiene presentación, debe tener Cantidad
+                if (!item.Item_Presentaciones_Id && !item.Cantidad) {
+                    throw new Error(`Item ${index + 1}: Cantidad es requerida para movimientos sin presentación`);
+                }
+            });
 
             const response = await axios.post(`${API_BASE_URL}/movimientos/entradas`, {
                 movimiento: movimientoData,
@@ -118,7 +163,11 @@ export const movimientoService = {
      * @param {string} movimientoData.Recepcionista - Nombre del responsable
      * @param {string} movimientoData.Motivo - Motivo del movimiento
      * @param {string} movimientoData.Observaciones - Observaciones adicionales
-     * @param {Array} items - Array de items con Item_Id y Cantidad
+     * @param {Array} items - Array de items
+     * @param {number} items[].Item_Id - ID del item (requerido)
+     * @param {number} items[].Cantidad - Cantidad en unidades base (opcional si hay presentación)
+     * @param {number} items[].Item_Presentaciones_Id - ID de la presentación (opcional)
+     * @param {number} items[].Cantidad_Presentacion - Cantidad de presentaciones (requerido si Item_Presentaciones_Id)
      */
     async crearSalida(movimientoData, items) {
         try {
@@ -129,6 +178,23 @@ export const movimientoService = {
             if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
+
+            // Validación de items con presentaciones
+            items.forEach((item, index) => {
+                if (!item.Item_Id) {
+                    throw new Error(`Item ${index + 1}: ID del item es requerido`);
+                }
+
+                // Si tiene presentación, debe tener Cantidad_Presentacion
+                if (item.Item_Presentaciones_Id && !item.Cantidad_Presentacion) {
+                    throw new Error(`Item ${index + 1}: Cantidad_Presentacion es requerida cuando se especifica presentación`);
+                }
+
+                // Si no tiene presentación, debe tener Cantidad
+                if (!item.Item_Presentaciones_Id && !item.Cantidad) {
+                    throw new Error(`Item ${index + 1}: Cantidad es requerida para movimientos sin presentación`);
+                }
+            });
 
             const response = await axios.post(`${API_BASE_URL}/movimientos/salidas`, {
                 movimiento: movimientoData,
@@ -151,7 +217,11 @@ export const movimientoService = {
      * @param {string} movimientoData.Recepcionista - Nombre del responsable
      * @param {string} movimientoData.Motivo - Motivo del movimiento
      * @param {string} movimientoData.Observaciones - Observaciones adicionales
-     * @param {Array} items - Array de items con Item_Id y Cantidad
+     * @param {Array} items - Array de items
+     * @param {number} items[].Item_Id - ID del item (requerido)
+     * @param {number} items[].Cantidad - Cantidad en unidades base (opcional si hay presentación)
+     * @param {number} items[].Item_Presentaciones_Id - ID de la presentación (opcional)
+     * @param {number} items[].Cantidad_Presentacion - Cantidad de presentaciones (requerido si Item_Presentaciones_Id)
      */
     async crearTransferencia(movimientoData, items) {
         try {
@@ -166,6 +236,23 @@ export const movimientoService = {
             if (!items || items.length === 0) {
                 throw new Error('Debe especificar al menos un item');
             }
+
+            // Validación de items con presentaciones
+            items.forEach((item, index) => {
+                if (!item.Item_Id) {
+                    throw new Error(`Item ${index + 1}: ID del item es requerido`);
+                }
+
+                // Si tiene presentación, debe tener Cantidad_Presentacion
+                if (item.Item_Presentaciones_Id && !item.Cantidad_Presentacion) {
+                    throw new Error(`Item ${index + 1}: Cantidad_Presentacion es requerida cuando se especifica presentación`);
+                }
+
+                // Si no tiene presentación, debe tener Cantidad
+                if (!item.Item_Presentaciones_Id && !item.Cantidad) {
+                    throw new Error(`Item ${index + 1}: Cantidad es requerida para movimientos sin presentación`);
+                }
+            });
 
             const response = await axios.post(`${API_BASE_URL}/movimientos/transferencias`, {
                 movimiento: movimientoData,

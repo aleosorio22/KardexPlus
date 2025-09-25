@@ -9,24 +9,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthContext - Inicializando...');
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('userData');
-    console.log('AuthContext - Token encontrado:', !!token);
-    console.log('AuthContext - UserData encontrado:', !!userData);
     
     if (token && userData) {
       const authData = {
         token,
         user: JSON.parse(userData)
       };
-      console.log('AuthContext - Setting auth:', authData);
       setAuth(authData);
       // Configuramos el token para todas las futuras peticiones
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     setLoading(false);
-    console.log('AuthContext - Inicialización completada');
   }, []);
 
   const login = async (credentials) => {

@@ -74,15 +74,12 @@ export function SidebarProvider({ children }) {
 }
 
 export default function Sidebar() {
-  console.log('Sidebar - Component rendering');
   
   const { logout } = useAuth();
   const location = useLocation();
   const { hasPermission, hasModulePermissions, loading: permissionsLoading } = usePermissions();
   const { isExpanded, setIsExpanded, isMobileOpen, setIsMobileOpen, openSubmenus, toggleSubmenu } = useSidebar();
 
-  console.log('Sidebar - Permissions loading:', permissionsLoading);
-  console.log('Sidebar - Location:', location.pathname);
 
   // Menú items con submenús y permisos requeridos
   const menuItems = [
@@ -193,7 +190,6 @@ export default function Sidebar() {
   // Filtrar elementos del menú basado en permisos
   const getFilteredMenuItem = (item) => {
     // TEMPORALMENTE: mostrar todos los elementos sin filtrar
-    console.log('Sidebar - Processing menu item:', item.name);
     return item;
     
     // Código original comentado por ahora
@@ -228,7 +224,6 @@ export default function Sidebar() {
     .map(getFilteredMenuItem)
     .filter(Boolean); // Remover elementos null
     
-  console.log('Sidebar - Filtered menu items:', filteredMenuItems);
 
   const isActive = (path) => {
     return location.pathname === path;

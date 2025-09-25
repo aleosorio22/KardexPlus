@@ -181,24 +181,61 @@ const CrearMovimiento = () => {
             Item_Descripcion: producto.Item_Descripcion,
             Stock_Actual: producto.Stock_Actual,
             UnidadMedida_Prefijo: producto.UnidadMedida_Prefijo || 'Und',
-            Cantidad: producto.Cantidad || ''
+            Cantidad: producto.Cantidad || '',
+            // Inicializar campos de presentación
+            Item_Presentaciones_Id: null,
+            Cantidad_Presentacion: null,
+            Es_Movimiento_Por_Presentacion: false
         };
         
         // Agregar al inicio de la lista (LIFO - Last In, First Out)
         setItemsMovimiento([nuevoItem, ...itemsMovimiento]);
     };
 
-    const handleItemUpdate = (itemId, cantidad, stockActual) => {
+    const handleItemUpdate = (itemId, cantidad, stockActual, datosItem = null) => {
+        console.log(`🏢 CrearMovimiento: === LLAMADA A handleItemUpdate ===`);
+        console.log(`🏢 CrearMovimiento: itemId: ${itemId}`);
+        console.log(`🏢 CrearMovimiento: cantidad: ${cantidad}`);
+        console.log(`🏢 CrearMovimiento: stockActual: ${stockActual}`);
+        console.log(`🏢 CrearMovimiento: datosItem:`, datosItem);
+        console.log(`🏢 CrearMovimiento: datosItem es null?`, datosItem === null);
+        
         const nuevosItems = itemsMovimiento.map(item => {
             if (item.Item_Id === itemId) {
-                return {
+                console.log(`🏢 CrearMovimiento: Encontrado item ${itemId}, datos actuales:`, item);
+                
+                const itemActualizado = {
                     ...item,
                     Cantidad: cantidad,
-                    Stock_Actual: stockActual
+                    Stock_Actual: stockActual,
+                    // Solo actualizar datos de presentación si datosItem no es null
+                    // Si datosItem es null, PRESERVAR los datos existentes de presentación
+                    ...(datosItem ? {
+                        Item_Presentaciones_Id: datosItem.Item_Presentaciones_Id,
+                        Cantidad_Presentacion: datosItem.Cantidad_Presentacion,
+                        Es_Movimiento_Por_Presentacion: datosItem.Es_Movimiento_Por_Presentacion,
+                        // Información adicional de la presentación para el resumen
+                        Presentacion_Nombre: datosItem.Presentacion_Nombre,
+                        Presentacion_Unidad_Prefijo: datosItem.Presentacion_Unidad_Prefijo,
+                        Factor_Conversion: datosItem.Factor_Conversion
+                    } : {
+                        // Cuando datosItem es null, preservar los datos de presentación existentes
+                        Item_Presentaciones_Id: item.Item_Presentaciones_Id,
+                        Cantidad_Presentacion: item.Cantidad_Presentacion,
+                        Es_Movimiento_Por_Presentacion: item.Es_Movimiento_Por_Presentacion,
+                        Presentacion_Nombre: item.Presentacion_Nombre,
+                        Presentacion_Unidad_Prefijo: item.Presentacion_Unidad_Prefijo,
+                        Factor_Conversion: item.Factor_Conversion
+                    })
                 };
+                
+                console.log(`🏢 CrearMovimiento: Item ${itemId} DESPUÉS de actualizar:`, itemActualizado);
+                return itemActualizado;
             }
             return item;
         });
+        
+        console.log('🏢 CrearMovimiento: === FIN handleItemUpdate ===');
         setItemsMovimiento(nuevosItems);
     };
 
@@ -240,13 +277,40 @@ const CrearMovimiento = () => {
             return false;
         }
 
-        // Validar items
-        const itemsValidos = itemsMovimiento.filter(item => 
-            item.Item_Id && item.Cantidad && parseFloat(item.Cantidad) > 0
-        );
+        // Validar items - CORRECCIÓN: Validar correctamente items con presentaciones
+        const itemsValidos = itemsMovimiento.filter(item => {
+            if (!item.Item_Id) {
+                return false;
+            }
+            
+            let tieneCantidadValida = false;
+            
+            if (item.Es_Movimiento_Por_Presentacion) {
+                // Para movimientos por presentación, validar Cantidad_Presentacion
+                tieneCantidadValida = item.Cantidad_Presentacion && 
+                                    parseFloat(item.Cantidad_Presentacion) > 0 &&
+                                    item.Item_Presentaciones_Id; // También validar que tenga ID de presentación
+                console.log(`Validación Item ${item.Item_Id} (PRESENTACIÓN): Cantidad_Presentacion="${item.Cantidad_Presentacion}", Item_Presentaciones_Id="${item.Item_Presentaciones_Id}", Válido=${tieneCantidadValida}`);
+            } else {
+                // Para movimientos normales, validar Cantidad base
+                tieneCantidadValida = item.Cantidad && parseFloat(item.Cantidad) > 0;
+                console.log(`Validación Item ${item.Item_Id} (BASE): Cantidad="${item.Cantidad}", Válido=${tieneCantidadValida}`);
+            }
+            
+            return tieneCantidadValida;
+        });
+
+        console.log('Items válidos encontrados:', itemsValidos.length);
+        console.log('Items válidos:', itemsValidos.map(item => ({
+            Id: item.Item_Id,
+            Descripcion: item.Item_Descripcion,
+            Es_Presentacion: item.Es_Movimiento_Por_Presentacion,
+            Cantidad_Base: item.Cantidad,
+            Cantidad_Presentacion: item.Cantidad_Presentacion
+        })));
 
         if (itemsValidos.length === 0) {
-            toast.error('Debe agregar al menos un item válido');
+            toast.error('Debe agregar al menos un item válido con cantidad');
             return false;
         }
 
@@ -258,9 +322,57 @@ const CrearMovimiento = () => {
             return;
         }
 
-        // Preparar datos para el resumen
-        const itemsValidos = itemsMovimiento
-            .filter(item => item.Item_Id && item.Cantidad && parseFloat(item.Cantidad) > 0);
+        // Preparar datos para el resumen - CORRECCIÓN: Incluir items con presentaciones válidas
+        const itemsValidos = itemsMovimiento.filter(item => {
+            // Validar que el item tenga ID
+            if (!item.Item_Id) {
+                return false;
+            }
+            
+            // Para items con presentación: validar Cantidad_Presentacion
+            if (item.Es_Movimiento_Por_Presentacion) {
+                const cantidadPresentacionValida = item.Cantidad_Presentacion && 
+                                                parseFloat(item.Cantidad_Presentacion) > 0;
+                console.log(`🏢 Item ${item.Item_Id} (PRESENTACIÓN): Cantidad_Presentacion="${item.Cantidad_Presentacion}", Válido=${cantidadPresentacionValida}`);
+                return cantidadPresentacionValida;
+            }
+            
+            // Para items normales: validar Cantidad base
+            const cantidadBaseValida = item.Cantidad && parseFloat(item.Cantidad) > 0;
+            console.log(`🏢 Item ${item.Item_Id} (BASE): Cantidad="${item.Cantidad}", Válido=${cantidadBaseValida}`);
+            return cantidadBaseValida;
+        });
+
+        console.log('🏢 CrearMovimiento: Items válidos filtrados:', itemsValidos.length);
+        console.log('🏢 CrearMovimiento: Items antes de enviar al resumen (COMPLETOS):', itemsValidos);
+        
+        // Log MUY ESPECÍFICO para cada campo de presentación
+        itemsValidos.forEach((item, index) => {
+            console.log(`🏢 ITEM ${index + 1} - ID: ${item.Item_Id} - "${item.Item_Descripcion}"`);
+            console.log(`   📦 Es_Movimiento_Por_Presentacion: ${item.Es_Movimiento_Por_Presentacion}`);
+            console.log(`   📦 Item_Presentaciones_Id: ${item.Item_Presentaciones_Id}`);
+            console.log(`   📦 Presentacion_Nombre: "${item.Presentacion_Nombre}"`);
+            console.log(`   📦 Presentacion_Unidad_Prefijo: "${item.Presentacion_Unidad_Prefijo}"`);
+            console.log(`   📦 Factor_Conversion: ${item.Factor_Conversion}`);
+            console.log(`   📦 Cantidad_Presentacion: ${item.Cantidad_Presentacion}`);
+            console.log(`   📦 Cantidad (base): ${item.Cantidad}`);
+            console.log(`   📦 TODOS LOS CAMPOS:`, Object.keys(item));
+        });
+
+        // Log específico para items con presentación
+        itemsValidos.forEach((item, index) => {
+            if (item.Es_Movimiento_Por_Presentacion) {
+                console.log(`🏢 CrearMovimiento: Item ${index + 1} (${item.Item_Descripcion}) CON PRESENTACIÓN:`, {
+                    Es_Movimiento_Por_Presentacion: item.Es_Movimiento_Por_Presentacion,
+                    Item_Presentaciones_Id: item.Item_Presentaciones_Id,
+                    Presentacion_Nombre: item.Presentacion_Nombre,
+                    Presentacion_Unidad_Prefijo: item.Presentacion_Unidad_Prefijo,
+                    Factor_Conversion: item.Factor_Conversion,
+                    Cantidad_Presentacion: item.Cantidad_Presentacion,
+                    Cantidad_Base: item.Cantidad
+                });
+            }
+        });
 
         // Navegar a la página de resumen con los datos
         navigate('/bodegas/movimientos/resumen', {

@@ -716,12 +716,36 @@ class MovimientoController {
                    .text(`    Código: ${item.Item_Codigo || item.Item_Id}`, { width: 148 })
                    .text(`    ID: ${item.Item_Id}`, { width: 148 });
 
-                const cantidad = parseFloat(item.Cantidad).toLocaleString('es-ES');
-                const unidad = item.UnidadMedida_Prefijo || item.Item_Unidad_Medida || 'Und';
-                
-                doc.fontSize(8)
-                   .font('Helvetica-Bold')
-                   .text(`    Cantidad: ${cantidad} ${unidad}`, { width: 148 });
+                // Mostrar cantidad - verificar si hay presentación
+                if (item.Es_Movimiento_Por_Presentacion && item.Cantidad_Presentacion) {
+                    // Item con presentación
+                    const cantidadPresentacion = parseFloat(item.Cantidad_Presentacion).toLocaleString('es-ES');
+                    const cantidadBase = parseFloat(item.Cantidad).toLocaleString('es-ES');
+                    const unidadBase = item.UnidadMedida_Prefijo || item.Item_Unidad_Medida || 'Und';
+                    const nombrePresentacion = item.Presentacion_Nombre || 'unidades';
+                    
+                    doc.fontSize(8)
+                       .font('Helvetica-Bold')
+                       .text(`    Cantidad: ${cantidadPresentacion} ${nombrePresentacion}`, { width: 148 });
+                    
+                    doc.fontSize(7)
+                       .font('Helvetica')
+                       .text(`    (= ${cantidadBase} ${unidadBase})`, { width: 148 });
+                    
+                    // Mostrar factor de conversión si está disponible
+                    if (item.Factor_Conversion) {
+                        doc.fontSize(6)
+                           .text(`    Factor: ${item.Factor_Conversion}x`, { width: 148 });
+                    }
+                } else {
+                    // Item normal (sin presentación)
+                    const cantidad = parseFloat(item.Cantidad).toLocaleString('es-ES');
+                    const unidad = item.UnidadMedida_Prefijo || item.Item_Unidad_Medida || 'Und';
+                    
+                    doc.fontSize(8)
+                       .font('Helvetica-Bold')
+                       .text(`    Cantidad: ${cantidad} ${unidad}`, { width: 148 });
+                }
 
                 // Precio si existe
                 if (item.Precio_Unitario && parseFloat(item.Precio_Unitario) > 0) {
@@ -766,6 +790,24 @@ class MovimientoController {
                    .font('Helvetica')
                    .text(`Items diferentes: ${totales.totalItems || items.length}`, { width: 148 })
                    .text(`Cantidad total: ${totales.cantidadTotal?.toLocaleString('es-ES') || 'N/A'}`, { width: 148 });
+
+                // Mostrar estadísticas de presentaciones si existen
+                const itemsConPresentacion = items.filter(item => item.Es_Movimiento_Por_Presentacion);
+                const itemsUnidadBase = items.filter(item => !item.Es_Movimiento_Por_Presentacion);
+                
+                if (itemsConPresentacion.length > 0 || itemsUnidadBase.length > 0) {
+                    doc.moveDown(0.1)
+                       .fontSize(7)
+                       .text('- - - - - - - - - - - - -', { align: 'center' });
+                    
+                    if (itemsConPresentacion.length > 0) {
+                        doc.text(`• Con presentación: ${itemsConPresentacion.length}`, { width: 148 });
+                    }
+                    
+                    if (itemsUnidadBase.length > 0) {
+                        doc.text(`• Unidad base: ${itemsUnidadBase.length}`, { width: 148 });
+                    }
+                }
 
                 if (totales.valorTotal && totales.valorTotal > 0) {
                     doc.moveDown(0.2)

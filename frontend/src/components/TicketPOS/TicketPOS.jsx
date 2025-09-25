@@ -188,7 +188,20 @@ const TicketPOS = ({
                                     <span className="item-id">ID: {item.Item_Id}</span>
                                 </div>
                                 <div className="item-quantity">
-                                    <span className="qty">{parseFloat(item.Cantidad).toLocaleString()} {item.UnidadMedida_Prefijo}</span>
+                                    {item.Es_Movimiento_Por_Presentacion && item.Cantidad_Presentacion ? (
+                                        <>
+                                            <span className="qty-presentation" style={{fontWeight: 'bold', color: '#6B46C1'}}>
+                                                {parseFloat(item.Cantidad_Presentacion).toLocaleString()} 
+                                                {item.Presentacion_Nombre ? ` ${item.Presentacion_Nombre}` : ' unidades'}
+                                            </span>
+                                            <br />
+                                            <span className="qty-base" style={{fontSize: '0.8em', color: '#666'}}>
+                                                = {parseFloat(item.Cantidad).toLocaleString()} {item.UnidadMedida_Prefijo}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="qty">{parseFloat(item.Cantidad).toLocaleString()} {item.UnidadMedida_Prefijo}</span>
+                                    )}
                                     {item.Precio_Unitario && (
                                         <span className="price">
                                             ${item.Precio_Unitario.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
