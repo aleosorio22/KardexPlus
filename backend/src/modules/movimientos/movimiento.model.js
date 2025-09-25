@@ -129,7 +129,7 @@ class MovimientoModel {
                 INNER JOIN Usuarios u ON m.Usuario_Id = u.Usuario_Id
                 LEFT JOIN Bodegas bo ON m.Origen_Bodega_Id = bo.Bodega_Id
                 LEFT JOIN Bodegas bd ON m.Destino_Bodega_Id = bd.Bodega_Id
-                LEFT JOIN movimientos_detalle md ON m.Movimiento_Id = md.Movimiento_Id
+                LEFT JOIN Movimientos_Detalle md ON m.Movimiento_Id = md.Movimiento_Id
                 ${whereClause}
                 GROUP BY m.Movimiento_Id
                 ORDER BY m.Fecha DESC
@@ -287,7 +287,7 @@ class MovimientoModel {
                     um.UnidadMedida_Nombre as Presentacion_Unidad_Nombre,
                     um.UnidadMedida_Prefijo as Presentacion_Unidad_Prefijo,
                     (md.Cantidad * i.Item_Costo_Unitario) as Valor_Total
-                FROM movimientos_detalle md
+                FROM Movimientos_Detalle md
                 INNER JOIN Items i ON md.Item_Id = i.Item_Id
                 INNER JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
                 INNER JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
@@ -369,7 +369,7 @@ class MovimientoModel {
                 
                 // Insertar detalle con soporte para presentaciones
                 const detalleQuery = `
-                    INSERT INTO movimientos_detalle (
+                    INSERT INTO Movimientos_Detalle (
                         Movimiento_Id, 
                         Item_Id, 
                         Item_Presentaciones_Id,
@@ -468,7 +468,7 @@ class MovimientoModel {
             for (const item of items) {
                 // Insertar detalle (el trigger se encargará de actualizar existencias automáticamente)
                 const detalleQuery = `
-                    INSERT INTO movimientos_detalle (
+                    INSERT INTO Movimientos_Detalle (
                         Movimiento_Id, 
                         Item_Id, 
                         Cantidad,
@@ -571,7 +571,7 @@ class MovimientoModel {
             for (const item of items) {
                 // Insertar detalle (el trigger se encargará de actualizar existencias automáticamente)
                 const detalleQuery = `
-                    INSERT INTO movimientos_detalle (
+                    INSERT INTO Movimientos_Detalle (
                         Movimiento_Id, 
                         Item_Id, 
                         Cantidad,
@@ -665,7 +665,7 @@ class MovimientoModel {
                 if (diferencia !== 0) {
                     // Insertar detalle con la cantidad final (el trigger se encarga de actualizar existencias)
                     const detalleQuery = `
-                        INSERT INTO movimientos_detalle (
+                        INSERT INTO Movimientos_Detalle (
                             Movimiento_Id, 
                             Item_Id, 
                             Cantidad,
