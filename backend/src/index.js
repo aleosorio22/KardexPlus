@@ -26,6 +26,7 @@ const bodegaRoutes = require('./modules/bodegas/bodega.routes');
 const existenciaRoutes = require('./modules/existencias/existencia.routes');
 const itemBodegaParamRoutes = require('./modules/existencias/itemBodegaParam.routes');
 const movimientoRoutes = require('./modules/movimientos/movimiento.routes');
+const requerimientoRoutes = require('./modules/requerimientos/requerimiento.routes');
 
 
 // Inicializar app
@@ -104,6 +105,9 @@ app.use('/api/item-bodega-parametros', itemBodegaParamRoutes);
 
 // Rutas de movimientos de inventario
 app.use('/api/movimientos', movimientoRoutes);
+
+// Rutas de requerimientos entre bodegas
+app.use('/api/requerimientos', requerimientoRoutes);
 
 // Rutas de configuración temporal (para desarrollo)
 app.use('/api/setup', setupRoutes);
