@@ -5,6 +5,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import {
   FiHome,
   FiUsers,
+  FiUser,
   FiPackage,
   FiShoppingCart,
   FiPieChart,
@@ -138,6 +139,12 @@ export default function Sidebar() {
           icon: FiClipboard, 
           path: "/bodegas/requerimientos",
           permission: "bodegas.ver"
+        },
+        { 
+          name: "Mis Requerimientos", 
+          icon: FiUser, 
+          path: "/mis-requerimientos",
+          permission: "requerimientos.ver"
         },
       ]
     },

@@ -183,6 +183,207 @@ class RequerimientoModel {
         }
     }
 
+    /**
+     * Obtener un requerimiento por ID con validación de permisos y metadata
+     */
+    static async findByIdWithPermissions(requerimientoId, usuarioId) {
+        const connection = await db.getConnection();
+        
+        try {
+            // Obtener datos principales del requerimiento
+            const [requerimientoRows] = await connection.execute(`
+                SELECT 
+                    r.*,
+                    u_solicita.Usuario_Nombre as Usuario_Solicita_Nombre,
+                    u_solicita.Usuario_Apellido as Usuario_Solicita_Apellido,
+                    u_aprueba.Usuario_Nombre as Usuario_Aprueba_Nombre,
+                    u_aprueba.Usuario_Apellido as Usuario_Aprueba_Apellido,
+                    u_despacha.Usuario_Nombre as Usuario_Despacha_Nombre,
+                    u_despacha.Usuario_Apellido as Usuario_Despacha_Apellido,
+                    bo.Bodega_Nombre as Origen_Bodega_Nombre,
+                    bd.Bodega_Nombre as Destino_Bodega_Nombre
+                FROM requerimientos r
+                LEFT JOIN Usuarios u_solicita ON r.Usuario_Solicita_Id = u_solicita.Usuario_Id
+                LEFT JOIN Usuarios u_aprueba ON r.Usuario_Aprueba_Id = u_aprueba.Usuario_Id
+                LEFT JOIN Usuarios u_despacha ON r.Usuario_Despacha_Id = u_despacha.Usuario_Id
+                LEFT JOIN Bodegas bo ON r.Origen_Bodega_Id = bo.Bodega_Id
+                LEFT JOIN Bodegas bd ON r.Destino_Bodega_Id = bd.Bodega_Id
+                WHERE r.Requerimiento_Id = ?
+            `, [requerimientoId]);
+
+            if (requerimientoRows.length === 0) {
+                return null;
+            }
+
+            const requerimiento = requerimientoRows[0];
+
+            // Verificar permisos del usuario
+            const permisos = await this.verificarPermisos(connection, usuarioId, requerimiento);
+            
+            // Si no puede ver el requerimiento, no devolver datos
+            if (!permisos.puede_ver) {
+                throw new Error('No tienes permisos para ver este requerimiento');
+            }
+
+            // Obtener detalle del requerimiento solo si tiene permisos
+            const [detalleRows] = await connection.execute(`
+                SELECT 
+                    rd.*,
+                    i.Item_Nombre,
+                    i.Item_Codigo_SKU as Item_Codigo,
+                    i.Item_Nombre as Item_Descripcion,
+                    i.Item_Codigo_Barra,
+                    c.CategoriaItem_Nombre,
+                    um.UnidadMedida_Nombre,
+                    um.UnidadMedida_Prefijo,
+                    ip.Presentacion_Nombre,
+                    ip.Cantidad_Base,
+                    (rd.Cantidad_Solicitada - rd.Cantidad_Despachada) as Cantidad_Pendiente
+                FROM requerimientos_detalle rd
+                INNER JOIN Items i ON rd.Item_Id = i.Item_Id
+                LEFT JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
+                LEFT JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
+                LEFT JOIN Items_Presentaciones ip ON rd.Item_Presentaciones_Id = ip.Item_Presentaciones_Id
+                WHERE rd.Requerimiento_Id = ?
+                ORDER BY i.Item_Nombre
+            `, [requerimientoId]);
+
+            requerimiento.detalle = detalleRows;
+
+            // Determinar acciones disponibles basadas en permisos y estado
+            const acciones = this.determinarAccionesDisponibles(permisos, requerimiento);
+
+            return {
+                requerimiento: requerimiento,
+                permisos_usuario: permisos,
+                acciones_disponibles: acciones
+            };
+
+        } finally {
+            connection.release();
+        }
+    }
+
+    /**
+     * Verificar permisos del usuario sobre un requerimiento específico
+     */
+    static async verificarPermisos(connection, usuarioId, requerimiento) {
+        // Verificar si es el propietario
+        const esPropietario = requerimiento.Usuario_Solicita_Id === usuarioId;
+
+        // Verificar permisos del sistema
+        const [permisosTodos] = await connection.execute(
+            'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+            [usuarioId, 'requerimientos.ver_todos']
+        );
+
+        const [permisosAprobar] = await connection.execute(
+            'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+            [usuarioId, 'requerimientos.aprobar']
+        );
+
+        const [permisosDespachar] = await connection.execute(
+            'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+            [usuarioId, 'requerimientos.despachar']
+        );
+
+        const [permisosCancelarOtros] = await connection.execute(
+            'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+            [usuarioId, 'requerimientos.cancelar_otros']
+        );
+
+        const [permisosReportes] = await connection.execute(
+            'SELECT fn_usuario_tiene_permiso(?, ?) as tiene_permiso',
+            [usuarioId, 'requerimientos.reportes']
+        );
+
+        const tieneVerTodos = permisosTodos[0].tiene_permiso;
+        const puedeAprobar = permisosAprobar[0].tiene_permiso;
+        const puedeDespachar = permisosDespachar[0].tiene_permiso;
+        const puedeCancelarOtros = permisosCancelarOtros[0].tiene_permiso;
+        const puedeVerReportes = permisosReportes[0].tiene_permiso;
+
+        // Lógica de permisos contextuales
+        let puedeVer = false;
+        let puedeEditar = false;
+        let puedeCancelar = false;
+        let puedeAprobarEste = false;
+        let puedeDespacharEste = false;
+
+        // Puede ver si:
+        if (esPropietario) {
+            puedeVer = true;
+            puedeEditar = requerimiento.Estado === 'Pendiente'; // Solo editar si está pendiente
+            puedeCancelar = ['Pendiente', 'Aprobado'].includes(requerimiento.Estado);
+        } else if (tieneVerTodos || puedeVerReportes) {
+            puedeVer = true;
+        } else if (puedeAprobar && requerimiento.Estado === 'Pendiente') {
+            puedeVer = true;
+            puedeAprobarEste = true;
+        } else if (puedeDespachar && ['Aprobado', 'En_Despacho', 'Parcialmente_Despachado'].includes(requerimiento.Estado)) {
+            puedeVer = true;
+            puedeDespacharEste = true;
+        }
+
+        // Permisos adicionales para administradores
+        if (tieneVerTodos) {
+            puedeAprobarEste = puedeAprobar && requerimiento.Estado === 'Pendiente';
+            puedeDespacharEste = puedeDespachar && ['Aprobado', 'En_Despacho', 'Parcialmente_Despachado'].includes(requerimiento.Estado);
+            puedeCancelar = puedeCancelarOtros && ['Pendiente', 'Aprobado'].includes(requerimiento.Estado);
+        }
+
+        return {
+            puede_ver: puedeVer,
+            es_propietario: esPropietario,
+            puede_editar: puedeEditar,
+            puede_cancelar: puedeCancelar,
+            puede_aprobar: puedeAprobarEste,
+            puede_despachar: puedeDespacharEste,
+            puede_ver_todos: tieneVerTodos,
+            puede_ver_reportes: puedeVerReportes,
+            contexto_acceso: esPropietario ? 'propietario' : 
+                           tieneVerTodos ? 'administrador' :
+                           puedeAprobarEste ? 'aprobador' :
+                           puedeDespacharEste ? 'despachador' : 'limitado'
+        };
+    }
+
+    /**
+     * Determinar acciones disponibles según permisos y estado
+     */
+    static determinarAccionesDisponibles(permisos, requerimiento) {
+        const acciones = [];
+
+        // Acciones siempre disponibles si puede ver
+        if (permisos.puede_ver) {
+            acciones.push('ver_detalle');
+        }
+
+        // Acciones según permisos específicos
+        if (permisos.puede_editar) {
+            acciones.push('editar');
+        }
+
+        if (permisos.puede_cancelar) {
+            acciones.push('cancelar');
+        }
+
+        if (permisos.puede_aprobar) {
+            acciones.push('aprobar', 'rechazar');
+        }
+
+        if (permisos.puede_despachar) {
+            acciones.push('despachar');
+        }
+
+        // Acciones de visualización adicionales
+        if (permisos.puede_ver_reportes || permisos.puede_ver_todos) {
+            acciones.push('exportar', 'imprimir');
+        }
+
+        return acciones;
+    }
+
     // =======================================
     // CREACIÓN DE REQUERIMIENTOS
     // =======================================
