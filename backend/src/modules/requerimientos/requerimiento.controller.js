@@ -45,10 +45,12 @@ class RequerimientoController {
 
     /**
      * Obtener requerimiento por ID con detalle completo
+     * Incluye validación de permisos contextuales y metadata de acciones disponibles
      */
     static async getRequerimientoById(req, res) {
         try {
             const { requerimientoId } = req.params;
+            const usuarioId = req.user.id;
 
             if (!requerimientoId || isNaN(requerimientoId)) {
                 return res.status(400).json({
@@ -57,7 +59,7 @@ class RequerimientoController {
                 });
             }
 
-            const requerimiento = await RequerimientoModel.findById(parseInt(requerimientoId));
+            const requerimiento = await RequerimientoModel.findByIdWithPermissions(parseInt(requerimientoId), usuarioId);
 
             if (!requerimiento) {
                 return res.status(404).json({
@@ -66,14 +68,32 @@ class RequerimientoController {
                 });
             }
 
+            // Verificar si el usuario tiene acceso a este requerimiento
+            if (!requerimiento.permisos_usuario.puede_ver) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'No tienes permisos para ver este requerimiento'
+                });
+            }
+
             res.json({
                 success: true,
-                data: requerimiento,
+                data: requerimiento.requerimiento,
+                permisos_usuario: requerimiento.permisos_usuario,
+                acciones_disponibles: requerimiento.acciones_disponibles,
                 message: 'Requerimiento obtenido exitosamente'
             });
 
         } catch (error) {
             console.error('Error obteniendo requerimiento por ID:', error);
+            
+            if (error.message.includes('No tienes permisos')) {
+                return res.status(403).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            
             res.status(500).json({
                 success: false,
                 message: 'Error interno del servidor',

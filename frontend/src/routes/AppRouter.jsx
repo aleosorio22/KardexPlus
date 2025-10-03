@@ -24,6 +24,7 @@ import MovimientosBodegas from "../pages/MovimientosBodegas";
 import CrearMovimiento from "../pages/CrearMovimiento";
 import ResumenMovimiento from "../pages/ResumenMovimiento";
 import RequerimientosBodegas from "../pages/RequerimientosBodegas";
+import MisRequerimientos from "../pages/MisRequerimientos";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -124,6 +125,11 @@ function AppRouter() {
                 <Route 
                   path="bodegas/requerimientos" 
                   element={<RequerimientosBodegas />}
+                />
+                
+                <Route 
+                  path="mis-requerimientos" 
+                  element={<MisRequerimientos />}
                 />
                 
                 <Route 
