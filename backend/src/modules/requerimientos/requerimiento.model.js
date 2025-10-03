@@ -99,13 +99,13 @@ class RequerimientoModel {
                     bd.Bodega_Nombre as Destino_Bodega_Nombre,
                     COUNT(rd.Requerimiento_Detalle_Id) as Total_Items,
                     SUM(CASE WHEN rd.Cantidad_Despachada >= rd.Cantidad_Solicitada THEN 1 ELSE 0 END) as Items_Completados
-                FROM requerimientos r
+                FROM Requerimientos r
                 LEFT JOIN Usuarios u_solicita ON r.Usuario_Solicita_Id = u_solicita.Usuario_Id
                 LEFT JOIN Usuarios u_aprueba ON r.Usuario_Aprueba_Id = u_aprueba.Usuario_Id
                 LEFT JOIN Usuarios u_despacha ON r.Usuario_Despacha_Id = u_despacha.Usuario_Id
                 LEFT JOIN Bodegas bo ON r.Origen_Bodega_Id = bo.Bodega_Id
                 LEFT JOIN Bodegas bd ON r.Destino_Bodega_Id = bd.Bodega_Id
-                LEFT JOIN requerimientos_detalle rd ON r.Requerimiento_Id = rd.Requerimiento_Id
+                LEFT JOIN Requerimientos_Detalle rd ON r.Requerimiento_Id = rd.Requerimiento_Id
                 ${whereClause}
                 GROUP BY r.Requerimiento_Id
                 ORDER BY r.Fecha DESC
@@ -137,7 +137,7 @@ class RequerimientoModel {
                     u_despacha.Usuario_Apellido as Usuario_Despacha_Apellido,
                     bo.Bodega_Nombre as Origen_Bodega_Nombre,
                     bd.Bodega_Nombre as Destino_Bodega_Nombre
-                FROM requerimientos r
+                FROM Requerimientos r
                 LEFT JOIN Usuarios u_solicita ON r.Usuario_Solicita_Id = u_solicita.Usuario_Id
                 LEFT JOIN Usuarios u_aprueba ON r.Usuario_Aprueba_Id = u_aprueba.Usuario_Id
                 LEFT JOIN Usuarios u_despacha ON r.Usuario_Despacha_Id = u_despacha.Usuario_Id
@@ -166,7 +166,7 @@ class RequerimientoModel {
                     ip.Presentacion_Nombre,
                     ip.Cantidad_Base,
                     (rd.Cantidad_Solicitada - rd.Cantidad_Despachada) as Cantidad_Pendiente
-                FROM requerimientos_detalle rd
+                FROM Requerimientos_Detalle rd
                 INNER JOIN Items i ON rd.Item_Id = i.Item_Id
                 LEFT JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
                 LEFT JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
@@ -202,7 +202,7 @@ class RequerimientoModel {
                     u_despacha.Usuario_Apellido as Usuario_Despacha_Apellido,
                     bo.Bodega_Nombre as Origen_Bodega_Nombre,
                     bd.Bodega_Nombre as Destino_Bodega_Nombre
-                FROM requerimientos r
+                FROM Requerimientos r
                 LEFT JOIN Usuarios u_solicita ON r.Usuario_Solicita_Id = u_solicita.Usuario_Id
                 LEFT JOIN Usuarios u_aprueba ON r.Usuario_Aprueba_Id = u_aprueba.Usuario_Id
                 LEFT JOIN Usuarios u_despacha ON r.Usuario_Despacha_Id = u_despacha.Usuario_Id
@@ -239,7 +239,7 @@ class RequerimientoModel {
                     ip.Presentacion_Nombre,
                     ip.Cantidad_Base,
                     (rd.Cantidad_Solicitada - rd.Cantidad_Despachada) as Cantidad_Pendiente
-                FROM requerimientos_detalle rd
+                FROM Requerimientos_Detalle rd
                 INNER JOIN Items i ON rd.Item_Id = i.Item_Id
                 LEFT JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id
                 LEFT JOIN UnidadesMedida um ON i.UnidadMedidaBase_Id = um.UnidadMedida_Id
@@ -413,7 +413,7 @@ class RequerimientoModel {
 
             // Crear el requerimiento principal
             const [result] = await connection.execute(`
-                INSERT INTO requerimientos (
+                INSERT INTO Requerimientos (
                     Usuario_Solicita_Id, 
                     Origen_Bodega_Id, 
                     Destino_Bodega_Id, 
@@ -446,7 +446,7 @@ class RequerimientoModel {
                 const calculos = await this.calcularCantidadItem(connection, item);
 
                 await connection.execute(`
-                    INSERT INTO requerimientos_detalle (
+                    INSERT INTO Requerimientos_Detalle (
                         Requerimiento_Id,
                         Item_Id,
                         Item_Presentaciones_Id,
@@ -499,7 +499,7 @@ class RequerimientoModel {
 
             // Verificar que el requerimiento existe y está pendiente
             const [requerimientoRows] = await connection.execute(
-                'SELECT Estado FROM requerimientos WHERE Requerimiento_Id = ?',
+                'SELECT Estado FROM Requerimientos WHERE Requerimiento_Id = ?',
                 [requerimientoId]
             );
 
@@ -513,7 +513,7 @@ class RequerimientoModel {
 
             // Actualizar estado y datos de aprobación
             await connection.execute(`
-                UPDATE requerimientos 
+                UPDATE Requerimientos 
                 SET Estado = 'Aprobado', 
                     Usuario_Aprueba_Id = ?, 
                     Fecha_Aprobacion = NOW()
@@ -544,7 +544,7 @@ class RequerimientoModel {
 
             // Verificar que el requerimiento existe y está pendiente
             const [requerimientoRows] = await connection.execute(
-                'SELECT Estado FROM requerimientos WHERE Requerimiento_Id = ?',
+                'SELECT Estado FROM Requerimientos WHERE Requerimiento_Id = ?',
                 [requerimientoId]
             );
 
@@ -553,12 +553,12 @@ class RequerimientoModel {
             }
 
             if (requerimientoRows[0].Estado !== 'Pendiente') {
-                throw new Error('Solo se pueden rechazar requerimientos pendientes');
+                throw new Error('Solo se pueden rechazar Requerimientos pendientes');
             }
 
             // Actualizar estado y datos de rechazo
             await connection.execute(`
-                UPDATE requerimientos 
+                UPDATE Requerimientos 
                 SET Estado = 'Rechazado', 
                     Usuario_Aprueba_Id = ?, 
                     Fecha_Aprobacion = NOW(),
@@ -599,7 +599,7 @@ class RequerimientoModel {
 
             // Verificar que el requerimiento existe y puede ser despachado
             const [requerimientoRows] = await connection.execute(
-                'SELECT * FROM requerimientos WHERE Requerimiento_Id = ?',
+                'SELECT * FROM Requerimientos WHERE Requerimiento_Id = ?',
                 [requerimientoId]
             );
 
@@ -616,7 +616,7 @@ class RequerimientoModel {
             // PASO 1: ACTUALIZAR PRIMERO LOS CAMPOS DE DESPACHO PARA EL TRIGGER
             console.log(`🔧 Actualizando campos de despacho antes de procesar items...`);
             await connection.execute(`
-                UPDATE requerimientos 
+                UPDATE Requerimientos 
                 SET Usuario_Despacha_Id = ?, 
                     Fecha_Despacho = NOW(),
                     Observaciones_Despacho = ?
@@ -628,7 +628,7 @@ class RequerimientoModel {
                 SELECT 
                     rd.*,
                     (rd.Cantidad_Solicitada - rd.Cantidad_Despachada) as Cantidad_Pendiente
-                FROM requerimientos_detalle rd
+                FROM Requerimientos_Detalle rd
                 WHERE rd.Requerimiento_Id = ?
             `, [requerimientoId]);
 
@@ -692,7 +692,7 @@ class RequerimientoModel {
                 
                 // PASO 3: ACTUALIZAR EL DETALLE (esto dispara el trigger)
                 await connection.execute(`
-                    UPDATE requerimientos_detalle 
+                    UPDATE Requerimientos_Detalle
                     SET Cantidad_Despachada = ?,
                         Cantidad_Despachada_Presentacion = ?
                     WHERE Requerimiento_Detalle_Id = ?
@@ -728,7 +728,7 @@ class RequerimientoModel {
                     Cantidad_Solicitada,
                     Cantidad_Despachada,
                     (Cantidad_Solicitada - Cantidad_Despachada) as Cantidad_Pendiente
-                FROM requerimientos_detalle 
+                FROM Requerimientos_Detalle
                 WHERE Requerimiento_Id = ?
             `, [requerimientoId]);
 
@@ -789,7 +789,7 @@ class RequerimientoModel {
             
             // Obtener el estado final actualizado por el trigger
             const [estadoFinal] = await connection.execute(
-                'SELECT Estado FROM requerimientos WHERE Requerimiento_Id = ?',
+                'SELECT Estado FROM Requerimientos WHERE Requerimiento_Id = ?',
                 [requerimientoId]
             );
             const estadoActualizado = estadoFinal[0]?.Estado || 'En_Despacho';
@@ -827,7 +827,7 @@ class RequerimientoModel {
 
             // Verificar que el requerimiento puede ser cancelado
             const [requerimientoRows] = await connection.execute(
-                'SELECT Estado FROM requerimientos WHERE Requerimiento_Id = ?',
+                'SELECT Estado FROM Requerimientos WHERE Requerimiento_Id = ?',
                 [requerimientoId]
             );
 
@@ -841,7 +841,7 @@ class RequerimientoModel {
 
             // Cancelar el requerimiento
             await connection.execute(`
-                UPDATE requerimientos 
+                UPDATE Requerimientos 
                 SET Estado = 'Cancelado',
                     Observaciones_Despacho = ?
                 WHERE Requerimiento_Id = ?
@@ -881,7 +881,7 @@ class RequerimientoModel {
                     SUM(CASE WHEN Estado = 'Parcialmente_Despachado' THEN 1 ELSE 0 END) as parciales,
                     SUM(CASE WHEN Estado = 'Rechazado' THEN 1 ELSE 0 END) as rechazados,
                     SUM(CASE WHEN Estado = 'Cancelado' THEN 1 ELSE 0 END) as cancelados
-                FROM requerimientos
+                FROM Requerimientos
             `);
 
             return stats[0];
