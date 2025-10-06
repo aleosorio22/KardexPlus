@@ -16,7 +16,9 @@ export const PermissionsProvider = ({ children }) => {
     const [permissionsByModule, setPermissionsByModule] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { user, token } = useAuth();
+    const { auth } = useAuth();
+    const user = auth?.user;
+    const token = auth?.token;
 
     // Cargar permisos del usuario actual
     const loadUserPermissions = async () => {

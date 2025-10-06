@@ -580,6 +580,122 @@ class RequerimientoModel {
     }
 
     // =======================================
+    // VALIDACIONES PARA DESPACHO
+    // =======================================
+
+    /**
+     * Validar que hay stock suficiente para el despacho antes de ejecutarlo
+     * @param {object} connection - Conexión a la base de datos
+     * @param {number} requerimientoId - ID del requerimiento
+     * @param {array} itemsDespacho - Items a despachar con cantidades
+     * @returns {object} - Información de validación y items procesados
+     */
+    static async validarStockParaDespacho(connection, requerimientoId, itemsDespacho) {
+        console.log(`🔍 Validando stock para despacho del requerimiento ${requerimientoId}...`);
+
+        // Obtener información del requerimiento y su detalle
+        const [requerimientoRows] = await connection.execute(
+            'SELECT Origen_Bodega_Id, Destino_Bodega_Id FROM Requerimientos WHERE Requerimiento_Id = ?',
+            [requerimientoId]
+        );
+
+        if (requerimientoRows.length === 0) {
+            throw new Error('Requerimiento no encontrado');
+        }
+
+        const requerimiento = requerimientoRows[0];
+
+        // Obtener detalle actual del requerimiento
+        const [detalleActual] = await connection.execute(`
+            SELECT 
+                rd.*,
+                i.Item_Nombre,
+                (rd.Cantidad_Solicitada - rd.Cantidad_Despachada) as Cantidad_Pendiente
+            FROM Requerimientos_Detalle rd
+            INNER JOIN Items i ON rd.Item_Id = i.Item_Id
+            WHERE rd.Requerimiento_Id = ?
+        `, [requerimientoId]);
+
+        const erroresStock = [];
+        const itemsValidados = [];
+
+        // Procesar cada item del despacho
+        for (const itemDespacho of itemsDespacho) {
+            const detalleItem = detalleActual.find(d => d.Item_Id === itemDespacho.Item_Id);
+            
+            if (!detalleItem) {
+                throw new Error(`Item ${itemDespacho.Item_Id} no encontrado en el requerimiento`);
+            }
+
+            let cantidadADespachar = itemDespacho.Cantidad_Despachada || 0;
+
+            // Si es por presentación, calcular cantidad base
+            if (detalleItem.Es_Requerimiento_Por_Presentacion && itemDespacho.Cantidad_Despachada_Presentacion) {
+                const [presentacionRows] = await connection.execute(
+                    'SELECT Cantidad_Base FROM Items_Presentaciones WHERE Item_Presentaciones_Id = ?',
+                    [detalleItem.Item_Presentaciones_Id]
+                );
+                
+                if (presentacionRows.length > 0) {
+                    const cantidadBase = presentacionRows[0].Cantidad_Base;
+                    cantidadADespachar = itemDespacho.Cantidad_Despachada_Presentacion * cantidadBase;
+                }
+            }
+
+            // Solo validar items que se van a despachar
+            if (cantidadADespachar > 0) {
+                // Validar que no exceda la cantidad pendiente
+                if (cantidadADespachar > detalleItem.Cantidad_Pendiente) {
+                    throw new Error(`Cantidad a despachar (${cantidadADespachar}) excede la cantidad pendiente (${detalleItem.Cantidad_Pendiente}) para el item ${detalleItem.Item_Nombre}`);
+                }
+
+                // Validar stock disponible en bodega origen
+                const [stockRows] = await connection.execute(
+                    'SELECT IFNULL(Cantidad, 0) as Stock_Actual FROM Existencias WHERE Bodega_Id = ? AND Item_Id = ?',
+                    [requerimiento.Origen_Bodega_Id, itemDespacho.Item_Id]
+                );
+
+                const stockActual = stockRows.length > 0 ? stockRows[0].Stock_Actual : 0;
+                
+                if (stockActual < cantidadADespachar) {
+                    erroresStock.push({
+                        itemId: itemDespacho.Item_Id,
+                        itemNombre: detalleItem.Item_Nombre,
+                        stockActual,
+                        cantidadSolicitada: cantidadADespachar,
+                        cantidadPendiente: detalleItem.Cantidad_Pendiente
+                    });
+                }
+
+                // Agregar a items validados
+                itemsValidados.push({
+                    ...itemDespacho,
+                    cantidadCalculada: cantidadADespachar,
+                    itemNombre: detalleItem.Item_Nombre,
+                    stockDisponible: stockActual
+                });
+            }
+        }
+
+        // Si hay errores de stock, generar error detallado
+        if (erroresStock.length > 0) {
+            const detalleErrores = erroresStock.map(e => 
+                `${e.itemNombre}: Stock ${e.stockActual}, Solicitado ${e.cantidadSolicitada}`
+            ).join('; ');
+            
+            throw new Error(`Stock insuficiente en bodega origen para completar el despacho. Detalles: ${detalleErrores}`);
+        }
+
+        console.log(`✅ Validación de stock completada exitosamente. Items a despachar: ${itemsValidados.length}`);
+
+        return {
+            requerimiento,
+            itemsValidados,
+            stockValidado: true
+        };
+    }
+
+    // =======================================
     // DESPACHO - FUNCIÓN PRINCIPAL CORREGIDA
     // =======================================
 
@@ -596,6 +712,13 @@ class RequerimientoModel {
             console.log(`🚚 Iniciando despacho del requerimiento ${requerimientoId}...`);
             console.log(`👤 Usuario que despacha: ${usuarioDespachaId}`);
             console.log(`📝 Observaciones: ${observacionesDespacho}`);
+
+            // =========================================================
+            // PASO 0: VALIDACIÓN PREVIA DE STOCK (SIN MODIFICAR DATOS)
+            // =========================================================
+            console.log(`🔒 Validando stock antes de proceder con el despacho...`);
+            const validacionStock = await this.validarStockParaDespacho(connection, requerimientoId, itemsDespacho);
+            console.log(`✅ Stock validado exitosamente. Procediendo con el despacho...`);
 
             // Verificar que el requerimiento existe y puede ser despachado
             const [requerimientoRows] = await connection.execute(

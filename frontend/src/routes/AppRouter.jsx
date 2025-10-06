@@ -24,8 +24,12 @@ import MovimientosBodegas from "../pages/MovimientosBodegas";
 import CrearMovimiento from "../pages/CrearMovimiento";
 import ResumenMovimiento from "../pages/ResumenMovimiento";
 import RequerimientosBodegas from "../pages/RequerimientosBodegas";
+import TodosRequerimientos from "../pages/TodosRequerimientos";
+import RequerimientosAprobados from "../pages/RequerimientosAprobados";
+import RequerimientosPendientes from "../pages/RequerimientosPendientes";
 import MisRequerimientos from "../pages/MisRequerimientos";
 import RequerimientoDetalle from "../pages/RequerimientoDetalle";
+import RequerimientoDetalleDespacho from "../pages/RequerimientoDetalleDespacho";
 import CrearRequerimiento from "../pages/CrearRequerimiento";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
@@ -130,18 +134,38 @@ function AppRouter() {
                 />
                 
                 <Route 
+                  path="bodegas/requerimientos/todos" 
+                  element={<TodosRequerimientos />}
+                />
+                
+                <Route 
+                  path="bodegas/requerimientos/pendientes" 
+                  element={<RequerimientosPendientes />}
+                />
+                
+                <Route 
+                  path="bodegas/requerimientos/aprobados" 
+                  element={<RequerimientosAprobados />}
+                />
+                
+                <Route 
+                  path="requerimientos/:id/despacho" 
+                  element={<RequerimientoDetalleDespacho />}
+                />
+                
+                <Route 
                   path="mis-requerimientos" 
                   element={<MisRequerimientos />}
                 />
                 
                 <Route 
-                  path="requerimientos/:id" 
-                  element={<RequerimientoDetalle />}
+                  path="requerimientos/crear" 
+                  element={<CrearRequerimiento />}
                 />
                 
                 <Route 
-                  path="requerimientos/crear" 
-                  element={<CrearRequerimiento />}
+                  path="requerimientos/:id" 
+                  element={<RequerimientoDetalle />}
                 />
                 
                 <Route 
