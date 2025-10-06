@@ -229,7 +229,7 @@ class PermissionsController {
                     Permiso_Nombre,
                     Permiso_Modulo
                 FROM v_permisos_usuario 
-                WHERE Usuario_Id = ? AND Estado_Permiso = 'PERMITIDO'
+                WHERE Usuario_Id = ? AND Estado_Permiso COLLATE utf8mb4_unicode_ci = 'PERMITIDO'
                 ORDER BY Permiso_Modulo, Permiso_Codigo`,
                 [userId]
             );

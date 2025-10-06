@@ -118,7 +118,11 @@ class RequerimientoController {
                 });
             }
 
-            const requerimientos = await RequerimientoModel.findByEstado(estado);
+            const filters = {
+                estado: estado
+            };
+
+            const requerimientos = await RequerimientoModel.findAll(filters);
 
             res.json({
                 success: true,
@@ -488,7 +492,11 @@ class RequerimientoController {
      */
     static async getRequerimientosPendientes(req, res) {
         try {
-            const requerimientos = await RequerimientoModel.findByEstado('Pendiente');
+            const filters = {
+                estado: 'Pendiente'
+            };
+
+            const requerimientos = await RequerimientoModel.findAll(filters);
 
             res.json({
                 success: true,

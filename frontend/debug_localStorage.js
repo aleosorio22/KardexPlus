@@ -1,0 +1,1 @@
+console.log('=== VERIFICANDO LOCALSTORAGE ==='); console.log('Token:', localStorage.getItem('token')); console.log('UserData:', localStorage.getItem('userData')); console.log('================================');
