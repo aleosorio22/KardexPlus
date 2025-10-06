@@ -125,11 +125,11 @@ const RequerimientosAprobados = () => {
                 <div className="flex space-x-2">
                     <button
                         onClick={() => handleVerDetalle(req.Requerimiento_Id)}
-                        className="flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
-                        title="Ver detalle"
+                        className="flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded hover:bg-green-200 transition-colors"
+                        title="Despachar requerimiento"
                     >
-                        <FiEye className="w-3 h-3 mr-1" />
-                        Ver
+                        <FiTruck className="w-3 h-3 mr-1" />
+                        Despachar
                     </button>
                 </div>
             )
@@ -197,10 +197,10 @@ const RequerimientosAprobados = () => {
                         e.stopPropagation();
                         handleVerDetalle(req.Requerimiento_Id);
                     }}
-                    className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                    className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-green-700 bg-green-50 rounded hover:bg-green-100 transition-colors"
                 >
-                    <FiEye className="w-4 h-4 mr-1" />
-                    Ver Detalle
+                    <FiTruck className="w-4 h-4 mr-1" />
+                    Despachar
                 </button>
             </div>
         </div>
@@ -277,9 +277,9 @@ const RequerimientosAprobados = () => {
         setFilters(newFilters);
     };
 
-    // Manejar ver detalle
+    // Manejar ver detalle - redirigir a vista de despacho
     const handleVerDetalle = (requerimientoId) => {
-        navigate(`/requerimientos/${requerimientoId}`);
+        navigate(`/requerimientos/${requerimientoId}/despacho`);
     };
 
     // Cargar datos al montar el componente

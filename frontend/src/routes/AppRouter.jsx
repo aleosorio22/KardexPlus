@@ -29,6 +29,7 @@ import RequerimientosAprobados from "../pages/RequerimientosAprobados";
 import RequerimientosPendientes from "../pages/RequerimientosPendientes";
 import MisRequerimientos from "../pages/MisRequerimientos";
 import RequerimientoDetalle from "../pages/RequerimientoDetalle";
+import RequerimientoDetalleDespacho from "../pages/RequerimientoDetalleDespacho";
 import CrearRequerimiento from "../pages/CrearRequerimiento";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
@@ -145,6 +146,11 @@ function AppRouter() {
                 <Route 
                   path="bodegas/requerimientos/aprobados" 
                   element={<RequerimientosAprobados />}
+                />
+                
+                <Route 
+                  path="requerimientos/:id/despacho" 
+                  element={<RequerimientoDetalleDespacho />}
                 />
                 
                 <Route 

@@ -1,6 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { FiAlertTriangle, FiX } from 'react-icons/fi';
+import { FiAlertTriangle, FiX, FiCheckCircle, FiInfo, FiAlertCircle } from 'react-icons/fi';
 
 export default function ConfirmModal({
   isOpen,
@@ -19,30 +19,42 @@ export default function ConfirmModal({
         return {
           icon: 'text-red-600',
           iconBg: 'bg-red-100',
-          confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+          confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+          IconComponent: FiAlertTriangle
         };
       case 'warning':
         return {
           icon: 'text-yellow-600',
           iconBg: 'bg-yellow-100',
-          confirmBtn: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500'
+          confirmBtn: 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500',
+          IconComponent: FiAlertTriangle
         };
       case 'info':
         return {
           icon: 'text-blue-600',
           iconBg: 'bg-blue-100',
-          confirmBtn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+          confirmBtn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+          IconComponent: FiInfo
+        };
+      case 'success':
+        return {
+          icon: 'text-green-600',
+          iconBg: 'bg-green-100',
+          confirmBtn: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+          IconComponent: FiCheckCircle
         };
       default:
         return {
           icon: 'text-red-600',
           iconBg: 'bg-red-100',
-          confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+          confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+          IconComponent: FiAlertTriangle
         };
     }
   };
 
   const styles = getTypeStyles();
+  const IconComponent = styles.IconComponent;
 
   const handleConfirm = () => {
     onConfirm();
@@ -79,7 +91,7 @@ export default function ConfirmModal({
                 <div className="flex items-start space-x-4">
                   {/* Icon */}
                   <div className={`flex-shrink-0 w-10 h-10 rounded-full ${styles.iconBg} flex items-center justify-center`}>
-                    <FiAlertTriangle className={`w-5 h-5 ${styles.icon}`} />
+                    <IconComponent className={`w-5 h-5 ${styles.icon}`} />
                   </div>
 
                   {/* Content */}
@@ -93,14 +105,16 @@ export default function ConfirmModal({
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-                        disabled={isLoading}
-                      >
-                        {cancelText}
-                      </button>
+                      {cancelText && (
+                        <button
+                          type="button"
+                          onClick={onClose}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                          disabled={isLoading}
+                        >
+                          {cancelText}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={handleConfirm}
