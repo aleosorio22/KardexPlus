@@ -243,7 +243,10 @@ const RequerimientosPendientes = () => {
 
                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                     <button 
-                        onClick={() => handleVerDetalle(req.Requerimiento_Id)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleVerDetalle(req.Requerimiento_Id);
+                        }}
                         className="text-primary hover:text-primary/80 text-sm font-medium flex items-center space-x-1"
                     >
                         <FiEye className="w-4 h-4" />
@@ -252,7 +255,10 @@ const RequerimientosPendientes = () => {
                     
                     <div className="flex items-center space-x-2">
                         <button 
-                            onClick={() => handleAprobar(req.Requerimiento_Id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleAprobar(req.Requerimiento_Id);
+                            }}
                             disabled={processingActions.has(req.Requerimiento_Id)}
                             className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center space-x-1"
                         >
@@ -265,7 +271,10 @@ const RequerimientosPendientes = () => {
                         </button>
                         
                         <button 
-                            onClick={() => handleRechazar(req.Requerimiento_Id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRechazar(req.Requerimiento_Id);
+                            }}
                             disabled={processingActions.has(req.Requerimiento_Id)}
                             className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50 flex items-center space-x-1"
                         >
@@ -527,7 +536,7 @@ const RequerimientosPendientes = () => {
                 initialSortField="Fecha"
                 initialSortDirection="desc"
                 onRowClick={(req) => handleVerDetalle(req.Requerimiento_Id)}
-                onCardClick={(req) => handleVerDetalle(req.Requerimiento_Id)}
+                onCardClick={null} // Deshabilitar click en tarjeta para evitar conflictos
                 mobileBreakpoint="lg"
             />
 
