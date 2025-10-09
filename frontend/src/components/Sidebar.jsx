@@ -24,7 +24,8 @@ import {
   FiBarChart2,
   FiArchive,
   FiRefreshCw,
-  FiClipboard
+  FiClipboard,
+  FiFileText
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -153,6 +154,12 @@ export default function Sidebar() {
       icon: FiShoppingCart, 
       path: "/compras",
       permission: "compras.ver"
+    },
+    { 
+      name: "Registro de Incidencias y Actividades", 
+      icon: FiFileText, 
+      path: "/incidencias",
+      permission: "incidencias.ver"
     },
     { 
       name: "Configuración", 
