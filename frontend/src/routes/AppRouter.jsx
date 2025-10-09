@@ -31,6 +31,7 @@ import MisRequerimientos from "../pages/MisRequerimientos";
 import RequerimientoDetalle from "../pages/RequerimientoDetalle";
 import RequerimientoDetalleDespacho from "../pages/RequerimientoDetalleDespacho";
 import CrearRequerimiento from "../pages/CrearRequerimiento";
+import RegistroIncidencias from "../pages/RegistroIncidencias";
 import NotFound from "../pages/NotFound";
 import AccessDenied from "../pages/AccessDenied";
 import ServerError from "../pages/ServerError";
@@ -166,6 +167,11 @@ function AppRouter() {
                 <Route 
                   path="requerimientos/:id" 
                   element={<RequerimientoDetalle />}
+                />
+                
+                <Route 
+                  path="incidencias" 
+                  element={<RegistroIncidencias />}
                 />
                 
                 <Route 
