@@ -25,7 +25,8 @@ import {
   FiArchive,
   FiRefreshCw,
   FiClipboard,
-  FiFileText
+  FiFileText,
+  FiLayers
 } from "react-icons/fi";
 
 // Contexto para compartir el estado del sidebar
@@ -150,6 +151,12 @@ export default function Sidebar() {
       ]
     },
     { 
+      name: "Mis Plantillas", 
+      icon: FiLayers, 
+      path: "/mis-plantillas",
+      permission: "plantillas.ver"
+    },
+    { 
       name: "Compras", 
       icon: FiShoppingCart, 
       path: "/compras",
@@ -184,6 +191,12 @@ export default function Sidebar() {
           icon: FiTool, 
           path: "/configuracion/unidades-medida",
           permission: "categorias.ver"
+        },
+        { 
+          name: "Plantillas", 
+          icon: FiLayers, 
+          path: "/configuracion/plantillas",
+          permission: "plantillas.ver"
         },
         { 
           name: "Almacenes y Producción", 

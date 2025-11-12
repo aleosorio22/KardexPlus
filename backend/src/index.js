@@ -27,6 +27,7 @@ const existenciaRoutes = require('./modules/existencias/existencia.routes');
 const itemBodegaParamRoutes = require('./modules/existencias/itemBodegaParam.routes');
 const movimientoRoutes = require('./modules/movimientos/movimiento.routes');
 const requerimientoRoutes = require('./modules/requerimientos/requerimiento.routes');
+const plantillaRoutes = require('./modules/plantillas/plantilla.routes');
 
 
 // Inicializar app
@@ -108,6 +109,9 @@ app.use('/api/movimientos', movimientoRoutes);
 
 // Rutas de requerimientos entre bodegas
 app.use('/api/requerimientos', requerimientoRoutes);
+
+// Rutas de plantillas (para requerimientos, movimientos y compras)
+app.use('/api/plantillas', plantillaRoutes);
 
 // Rutas de configuración temporal (para desarrollo)
 app.use('/api/setup', setupRoutes);
