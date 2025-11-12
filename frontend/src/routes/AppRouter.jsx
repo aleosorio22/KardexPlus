@@ -12,6 +12,8 @@ import Roles from "../pages/admin/Roles";
 import RolePermissions from "../pages/admin/RolePermissions";
 import SystemSetup from "../pages/admin/SystemSetup";
 import UnidadesMedida from "../pages/admin/UnidadesMedida";
+import Plantillas from "../pages/admin/Plantillas";
+import PlantillaDetails from "../pages/admin/PlantillaDetails";
 import Categories from "../pages/Categories";
 import Items from "../pages/Items";
 import ItemDetails from "../pages/ItemDetails";
@@ -28,6 +30,7 @@ import TodosRequerimientos from "../pages/TodosRequerimientos";
 import RequerimientosAprobados from "../pages/RequerimientosAprobados";
 import RequerimientosPendientes from "../pages/RequerimientosPendientes";
 import MisRequerimientos from "../pages/MisRequerimientos";
+import MisPlantillas from "../pages/MisPlantillas";
 import RequerimientoDetalle from "../pages/RequerimientoDetalle";
 import RequerimientoDetalleDespacho from "../pages/RequerimientoDetalleDespacho";
 import CrearRequerimiento from "../pages/CrearRequerimiento";
@@ -86,6 +89,16 @@ function AppRouter() {
                 <Route 
                   path="configuracion/unidades-medida" 
                   element={<UnidadesMedida />}
+                />
+                
+                <Route 
+                  path="configuracion/plantillas" 
+                  element={<Plantillas />}
+                />
+                
+                <Route 
+                  path="configuracion/plantillas/:id" 
+                  element={<PlantillaDetails />}
                 />
                 
                 <Route 
@@ -157,6 +170,11 @@ function AppRouter() {
                 <Route 
                   path="mis-requerimientos" 
                   element={<MisRequerimientos />}
+                />
+                
+                <Route 
+                  path="mis-plantillas" 
+                  element={<MisPlantillas />}
                 />
                 
                 <Route 
