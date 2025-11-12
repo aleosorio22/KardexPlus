@@ -481,7 +481,7 @@ const Plantillas = () => {
         renderCard={renderCard}
         isLoading={isLoading}
         emptyMessage="No se encontraron plantillas"
-        emptyIcon={<FiLayers className="w-12 h-12 text-gray-400" />}
+        emptyIcon={FiLayers}
         rowKeyField="Plantilla_Id"
         pagination={true}
         initialPageSize={10}
