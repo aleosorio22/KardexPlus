@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiPackage, FiArrowRight, FiClock } from 'react-icons/fi';
+import { FiArrowLeft, FiPackage, FiArrowRight, FiClock, FiLayers } from 'react-icons/fi';
 
-const HeaderRequerimiento = ({ onBack }) => {
+const HeaderRequerimiento = ({ onBack, plantillaInfo }) => {
     const navigate = useNavigate();
 
     const handleBack = () => {
@@ -43,9 +43,23 @@ const HeaderRequerimiento = ({ onBack }) => {
                         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight">
                             Nuevo Requerimiento
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-600 mt-1 leading-relaxed">
-                            Solicita productos entre bodegas del sistema
-                        </p>
+                        {plantillaInfo ? (
+                            <div className="mt-2 flex items-center gap-2 p-2 bg-purple-50 border border-purple-200 rounded-lg">
+                                <FiLayers className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs text-purple-600 font-medium">
+                                        Usando plantilla:
+                                    </p>
+                                    <p className="text-sm text-purple-800 font-semibold truncate">
+                                        {plantillaInfo.nombre}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm sm:text-base text-gray-600 mt-1 leading-relaxed">
+                                Solicita productos entre bodegas del sistema
+                            </p>
+                        )}
                     </div>
                 </div>
 

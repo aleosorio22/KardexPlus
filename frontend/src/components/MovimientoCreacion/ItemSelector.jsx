@@ -18,12 +18,18 @@ const ItemSelector = ({
     const [loading, setLoading] = useState(false);
     const [stockStatus, setStockStatus] = useState('normal');
     
-    // Nuevos estados para presentaciones
+    // 🎯 Inicializar estados para presentaciones desde producto (plantilla)
     const [presentacionesDisponibles, setPresentacionesDisponibles] = useState([]);
     const [presentacionSeleccionada, setPresentacionSeleccionada] = useState(null);
-    const [cantidadPresentacion, setCantidadPresentacion] = useState('');
-    const [esMovimientoPorPresentacion, setEsMovimientoPorPresentacion] = useState(false);
+    const [cantidadPresentacion, setCantidadPresentacion] = useState(producto.Cantidad_Presentacion || '');
+    const [esMovimientoPorPresentacion, setEsMovimientoPorPresentacion] = useState(producto.Es_Movimiento_Por_Presentacion || false);
     const [loadingPresentaciones, setLoadingPresentaciones] = useState(false);
+
+    console.log(`🎯 ItemSelector INICIALIZADO para Item_Id ${producto.Item_Id}:`, {
+        Cantidad_Presentacion_Inicial: cantidadPresentacion,
+        Es_Movimiento_Por_Presentacion_Inicial: esMovimientoPorPresentacion,
+        Item_Presentaciones_Id: producto.Item_Presentaciones_Id
+    });
 
     useEffect(() => {
         // Cargar presentaciones disponibles al montar el componente
@@ -40,14 +46,46 @@ const ItemSelector = ({
     }, [bodegaOrigenId, bodegaDestinoId, tipoMovimiento]);
 
     useEffect(() => {
-        // Validar cantidad cuando cambia
+        // Validar cantidad cuando cambia (también considerar cambios en presentación)
         validateCantidad(cantidad);
-    }, [cantidad, stockActual, tipoMovimiento]);
+    }, [cantidad, stockActual, tipoMovimiento, esMovimientoPorPresentacion, cantidadPresentacion, presentacionSeleccionada]);
 
     useEffect(() => {
         // Actualizar componente padre cuando cambien los estados relevantes
         updateOnCantidadChange();
     }, [cantidad, stockActual, presentacionSeleccionada, cantidadPresentacion, esMovimientoPorPresentacion]);
+
+    // 🎯 Inicializar presentación si el item viene pre-cargado desde plantilla
+    useEffect(() => {
+        if (producto.Item_Presentaciones_Id && presentacionesDisponibles.length > 0) {
+            const presentacionExistente = presentacionesDisponibles.find(
+                p => p.Item_Presentaciones_Id === producto.Item_Presentaciones_Id
+            );
+            if (presentacionExistente && !presentacionSeleccionada) {
+                console.log(`✅ ItemSelector: Presentación inicializada desde plantilla:`, {
+                    Item_Id: producto.Item_Id,
+                    Presentacion_Id: presentacionExistente.Item_Presentaciones_Id,
+                    Presentacion_Nombre: presentacionExistente.Presentacion_Nombre,
+                    Cantidad_Base: presentacionExistente.Cantidad_Base,
+                    Cantidad_Presentacion_Estado: cantidadPresentacion,
+                    Cantidad_Presentacion_Producto: producto.Cantidad_Presentacion
+                });
+                setPresentacionSeleccionada(presentacionExistente);
+                setEsMovimientoPorPresentacion(true);
+                // Asegurar que cantidad de presentación esté inicializada
+                if (producto.Cantidad_Presentacion && !cantidadPresentacion) {
+                    console.log(`🔧 Inicializando cantidadPresentacion: ${producto.Cantidad_Presentacion}`);
+                    setCantidadPresentacion(producto.Cantidad_Presentacion);
+                }
+                // Limpiar cantidad base si es movimiento por presentación
+                if (producto.Es_Movimiento_Por_Presentacion) {
+                    console.log(`🔧 Limpiando cantidad base porque es movimiento por presentación`);
+                    setCantidad('');
+                }
+                // updateOnCantidadChange se llamará automáticamente por el useEffect anterior
+            }
+        }
+    }, [producto.Item_Presentaciones_Id, presentacionesDisponibles]);
 
     const cargarPresentacionesDisponibles = async () => {
         try {
@@ -140,7 +178,19 @@ const ItemSelector = ({
     };
 
     const validateCantidad = (cant) => {
-        const cantidadNum = parseFloat(cant) || 0;
+        // 🎯 CORRECCIÓN: Si es movimiento por presentación, calcular cantidad base desde presentación
+        let cantidadNum = 0;
+        
+        if (esMovimientoPorPresentacion && cantidadPresentacion && presentacionSeleccionada) {
+            // Calcular cantidad base desde la presentación
+            const cantPresNum = parseFloat(cantidadPresentacion) || 0;
+            cantidadNum = cantPresNum * (presentacionSeleccionada.Cantidad_Base || 1);
+            console.log(`🔧 validateCantidad: Calculando desde presentación: ${cantPresNum} × ${presentacionSeleccionada.Cantidad_Base} = ${cantidadNum}`);
+        } else {
+            // Usar cantidad base directamente
+            cantidadNum = parseFloat(cant) || 0;
+            console.log(`🔧 validateCantidad: Usando cantidad base: ${cantidadNum}`);
+        }
         
         // Para salidas y transferencias, validar que no exceda el stock
         if ((tipoMovimiento === 'salida' || tipoMovimiento === 'transferencia') && stockActual !== null) {
@@ -250,6 +300,13 @@ const ItemSelector = ({
     };
 
     const updateOnCantidadChange = () => {
+        // 🚨 CRÍTICO: Si el item viene con presentación desde plantilla, 
+        // NO actualizar hasta que la presentación esté cargada
+        if (esMovimientoPorPresentacion && !presentacionSeleccionada) {
+            console.log(`⏳ ItemSelector: Esperando a que se cargue la presentación para Item_Id ${producto.Item_Id}...`);
+            return;
+        }
+
         // Determinar qué valores enviar al componente padre
         const cantidadFinal = parseFloat(cantidad) || 0;
         
@@ -488,10 +545,29 @@ const ItemSelector = ({
                             ) : (
                                 <>
                                     <div className="text-base font-bold text-gray-700">
-                                        {cantidad && stockActual !== null 
-                                            ? Math.max(0, (typeof stockActual === 'number' ? stockActual : 0) + (tipoMovimiento === 'entrada' ? parseFloat(cantidad) : -parseFloat(cantidad))).toFixed(2)
-                                            : '-'
-                                        }
+                                        {(() => {
+                                            // 🎯 CORRECCIÓN: Calcular cantidad base correctamente
+                                            let cantidadBase = 0;
+                                            
+                                            if (esMovimientoPorPresentacion && cantidadPresentacion && presentacionSeleccionada) {
+                                                // Calcular desde presentación
+                                                const cantPresNum = parseFloat(cantidadPresentacion) || 0;
+                                                cantidadBase = cantPresNum * (presentacionSeleccionada.Cantidad_Base || 1);
+                                            } else {
+                                                // Usar cantidad directa
+                                                cantidadBase = parseFloat(cantidad) || 0;
+                                            }
+                                            
+                                            if (cantidadBase > 0 && stockActual !== null) {
+                                                const stockNum = typeof stockActual === 'number' ? stockActual : 0;
+                                                const resultante = tipoMovimiento === 'entrada' 
+                                                    ? stockNum + cantidadBase 
+                                                    : stockNum - cantidadBase;
+                                                return Math.max(0, resultante).toFixed(2);
+                                            }
+                                            
+                                            return '-';
+                                        })()}
                                     </div>
                                     <div className="text-xs text-gray-500">{producto.UnidadMedida_Prefijo || 'Und'}</div>
                                 </>
@@ -750,10 +826,29 @@ const ItemSelector = ({
                             <div className="flex flex-col items-center">
                                 <span className="text-xs font-medium text-gray-700 mb-1">Resultante:</span>
                                 <span className="text-sm font-medium text-gray-600">
-                                    {cantidad && stockActual !== null 
-                                        ? Math.max(0, (typeof stockActual === 'number' ? stockActual : 0) + (tipoMovimiento === 'entrada' ? parseFloat(cantidad) : -parseFloat(cantidad))).toFixed(2)
-                                        : '-'
-                                    }
+                                    {(() => {
+                                        // 🎯 CORRECCIÓN: Calcular cantidad base correctamente
+                                        let cantidadBase = 0;
+                                        
+                                        if (esMovimientoPorPresentacion && cantidadPresentacion && presentacionSeleccionada) {
+                                            // Calcular desde presentación
+                                            const cantPresNum = parseFloat(cantidadPresentacion) || 0;
+                                            cantidadBase = cantPresNum * (presentacionSeleccionada.Cantidad_Base || 1);
+                                        } else {
+                                            // Usar cantidad directa
+                                            cantidadBase = parseFloat(cantidad) || 0;
+                                        }
+                                        
+                                        if (cantidadBase > 0 && stockActual !== null) {
+                                            const stockNum = typeof stockActual === 'number' ? stockActual : 0;
+                                            const resultante = tipoMovimiento === 'entrada' 
+                                                ? stockNum + cantidadBase 
+                                                : stockNum - cantidadBase;
+                                            return Math.max(0, resultante).toFixed(2);
+                                        }
+                                        
+                                        return '-';
+                                    })()}
                                 </span>
                             </div>
                         )}

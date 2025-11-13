@@ -129,7 +129,8 @@ class PlantillaModel {
                     um.UnidadMedida_Nombre,
                     um.UnidadMedida_Prefijo,
                     ip.Presentacion_Nombre,
-                    ip.Cantidad_Base as Factor_Conversion
+                    ip.Cantidad_Base as Factor_Conversion,
+                    um.UnidadMedida_Prefijo as Presentacion_Unidad_Prefijo
                 FROM Plantillas_Detalle pd
                 INNER JOIN Items i ON pd.Item_Id = i.Item_Id
                 LEFT JOIN CategoriasItems c ON i.CategoriaItem_Id = c.CategoriaItem_Id

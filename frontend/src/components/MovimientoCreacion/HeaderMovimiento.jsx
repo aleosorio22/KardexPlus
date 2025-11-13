@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     FiArrowLeft, FiPackage, FiTruck, FiArrowRight, 
-    FiEdit3, FiRefreshCw 
+    FiEdit3, FiRefreshCw, FiLayers 
 } from 'react-icons/fi';
 
 /**
@@ -11,8 +11,9 @@ import {
  * @param {Object} props
  * @param {string} props.tipo - Tipo de movimiento (entrada, salida, transferencia, ajuste)
  * @param {Function} props.onBack - Función para regresar (opcional, por defecto navega a /bodegas/movimientos)
+ * @param {Object} props.plantillaInfo - Información de la plantilla si viene desde una plantilla
  */
-const HeaderMovimiento = ({ tipo, onBack }) => {
+const HeaderMovimiento = ({ tipo, onBack, plantillaInfo }) => {
     const navigate = useNavigate();
 
     const getTipoInfo = (tipo) => {
@@ -94,9 +95,23 @@ const HeaderMovimiento = ({ tipo, onBack }) => {
                         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight">
                             {tipoInfo.titulo}
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-600 mt-1 leading-relaxed">
-                            {tipoInfo.descripcion}
-                        </p>
+                        {plantillaInfo ? (
+                            <div className="mt-2 flex items-center gap-2 p-2 bg-purple-50 border border-purple-200 rounded-lg">
+                                <FiLayers className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-xs text-purple-600 font-medium">
+                                        Usando plantilla:
+                                    </p>
+                                    <p className="text-sm text-purple-800 font-semibold truncate">
+                                        {plantillaInfo.nombre}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm sm:text-base text-gray-600 mt-1 leading-relaxed">
+                                {tipoInfo.descripcion}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

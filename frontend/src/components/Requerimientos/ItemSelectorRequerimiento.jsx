@@ -40,8 +40,15 @@ const ItemSelectorRequerimiento = ({
                 p => p.Item_Presentaciones_Id === item.Item_Presentaciones_Id
             );
             if (presentacionExistente) {
+                console.log(`✅ ItemSelectorRequerimiento: Presentación inicializada desde plantilla:`, {
+                    Item_Id: item.Item_Id,
+                    Presentacion_Id: presentacionExistente.Item_Presentaciones_Id,
+                    Presentacion_Nombre: presentacionExistente.Presentacion_Nombre,
+                    Cantidad_Base: presentacionExistente.Cantidad_Base
+                });
                 setPresentacionSeleccionada(presentacionExistente);
                 setEsRequerimientoPorPresentacion(true);
+                // updateOnCantidadChange se llamará automáticamente por el useEffect de línea 31
             }
         }
     }, [item.Item_Presentaciones_Id, presentacionesDisponibles]);
@@ -80,6 +87,13 @@ const ItemSelectorRequerimiento = ({
         console.log(`🔧 Presentación seleccionada:`, presentacionSeleccionada);
         console.log(`🔧 Cantidad presentación: ${cantidadPresentacion}`);
         console.log(`🔧 Cantidad base: ${cantidad}`);
+
+        // 🚨 CRÍTICO: Si el item viene con presentación desde plantilla, 
+        // NO actualizar hasta que la presentación esté cargada
+        if (esRequerimientoPorPresentacion && !presentacionSeleccionada) {
+            console.log(`⏳ Esperando a que se cargue la presentación...`);
+            return;
+        }
 
         if (esRequerimientoPorPresentacion && presentacionSeleccionada) {
             // Calcular cantidad base a partir de la presentación

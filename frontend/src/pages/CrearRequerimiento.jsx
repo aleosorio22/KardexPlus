@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { bodegaService } from '../services/bodegaService';
 import { requerimientoService } from '../services/requerimientoService';
+import plantillaService from '../services/plantillaService';
 
 // Componentes específicos para requerimientos
 import HeaderRequerimiento from '../components/Requerimientos/HeaderRequerimiento';
@@ -17,10 +18,12 @@ import ConfirmModal from '../components/ConfirmModal';
 const CrearRequerimiento = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const location = useLocation();
     
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setSaving] = useState(false);
     const [bodegas, setBodegas] = useState([]);
+    const [plantillaInfo, setPlantillaInfo] = useState(null);
     
     // Estados para modal de confirmación
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -48,9 +51,118 @@ const CrearRequerimiento = () => {
     const cargarDatosIniciales = async () => {
         try {
             setIsLoading(true);
+            
+            // Cargar bodegas
             const bodegasResponse = await bodegaService.getAllBodegas();
             const bodegas = bodegasResponse.data || [];
             setBodegas(bodegas);
+
+            // Verificar si viene desde una plantilla
+            const { plantillaId, plantillaNombre, fromPlantilla } = location.state || {};
+            
+            if (fromPlantilla && plantillaId) {
+                console.log('🎯 Cargando plantilla:', plantillaId);
+                toast.loading('Cargando plantilla...', { id: 'loading-plantilla' });
+                
+                try {
+                    const plantillaResponse = await plantillaService.getPlantillaById(plantillaId);
+                    
+                    if (plantillaResponse.success && plantillaResponse.data) {
+                        const plantilla = plantillaResponse.data;
+                        console.log('✅ Plantilla cargada:', plantilla);
+                        
+                        setPlantillaInfo({
+                            id: plantilla.Plantilla_Id,
+                            nombre: plantilla.Plantilla_Nombre
+                        });
+
+                        // Precargar datos de bodegas desde la plantilla
+                        setRequerimientoData(prev => ({
+                            ...prev,
+                            Origen_Bodega_Id: plantilla.Origen_Bodega_Id || '',
+                            Destino_Bodega_Id: plantilla.Destino_Bodega_Id || '',
+                            Observaciones: `Creado desde plantilla: ${plantilla.Plantilla_Nombre}`
+                        }));
+
+                        // Precargar items desde la plantilla
+                        if (plantilla.detalle && plantilla.detalle.length > 0) {
+                            console.log('🔍 DETALLE COMPLETO DE LA PLANTILLA:', JSON.stringify(plantilla.detalle, null, 2));
+                            
+                            const itemsPlantilla = plantilla.detalle.map(item => {
+                                // CORRECCIÓN: Es_Por_Presentacion viene como número (0 o 1) desde MySQL
+                                const esPorPresentacion = !!(
+                                    item.Es_Por_Presentacion === 1 || 
+                                    item.Es_Por_Presentacion === true ||
+                                    (item.Item_Presentaciones_Id && item.Cantidad_Presentacion)
+                                );
+                                
+                                console.log(`📦 Procesando item de plantilla:`, {
+                                    Item_Id: item.Item_Id,
+                                    Item_Nombre: item.Item_Nombre,
+                                    Es_Por_Presentacion_Backend: item.Es_Por_Presentacion,
+                                    Es_Por_Presentacion_Tipo: typeof item.Es_Por_Presentacion,
+                                    Item_Presentaciones_Id: item.Item_Presentaciones_Id,
+                                    Cantidad_Presentacion: item.Cantidad_Presentacion,
+                                    Cantidad_Base: item.Cantidad,
+                                    Presentacion_Nombre: item.Presentacion_Nombre,
+                                    Presentacion_Unidad_Prefijo: item.Presentacion_Unidad_Prefijo,
+                                    Factor_Conversion: item.Factor_Conversion,
+                                    UnidadMedida_Prefijo: item.UnidadMedida_Prefijo,
+                                    esPorPresentacion_Calculado: esPorPresentacion
+                                });
+                                
+                                const itemMapeado = {
+                                    Item_Id: item.Item_Id,
+                                    Item_Codigo_SKU: item.Item_Codigo || item.Item_Codigo_SKU,
+                                    Item_Nombre: item.Item_Nombre,
+                                    UnidadMedida_Prefijo: item.UnidadMedida_Prefijo || 'Und',
+                                    // CORRECCIÓN: Si es por presentación, NO usar Cantidad_Solicitada base
+                                    // La Cantidad_Solicitada se calculará automáticamente desde Cantidad_Solicitada_Presentacion
+                                    Cantidad_Solicitada: esPorPresentacion ? '' : (parseFloat(item.Cantidad) || ''),
+                                    // Campos de presentación - ESTOS SON LOS IMPORTANTES
+                                    Item_Presentaciones_Id: esPorPresentacion ? item.Item_Presentaciones_Id : null,
+                                    Cantidad_Solicitada_Presentacion: esPorPresentacion ? parseFloat(item.Cantidad_Presentacion) : null,
+                                    Es_Requerimiento_Por_Presentacion: esPorPresentacion,
+                                    // Campos adicionales para mostrar la presentación correctamente
+                                    Presentacion_Nombre: esPorPresentacion ? item.Presentacion_Nombre : null,
+                                    Presentacion_Unidad_Prefijo: esPorPresentacion ? (item.Presentacion_Unidad_Prefijo || item.UnidadMedida_Prefijo) : null,
+                                    Factor_Conversion: esPorPresentacion ? parseFloat(item.Factor_Conversion) : null
+                                };
+                                
+                                console.log(`✅ Item mapeado final:`, itemMapeado);
+                                return itemMapeado;
+                            });
+                            
+                            console.log('📦 Items precargados:', itemsPlantilla);
+                            
+                            // Verificar items con presentación
+                            itemsPlantilla.forEach((item, idx) => {
+                                if (item.Es_Requerimiento_Por_Presentacion) {
+                                    console.log(`🎯 Item #${idx + 1} CON PRESENTACIÓN:`, {
+                                        Item_Nombre: item.Item_Nombre,
+                                        Item_Presentaciones_Id: item.Item_Presentaciones_Id,
+                                        Cantidad_Solicitada_Presentacion: item.Cantidad_Solicitada_Presentacion,
+                                        Cantidad_Solicitada: item.Cantidad_Solicitada,
+                                        Presentacion_Nombre: item.Presentacion_Nombre,
+                                        Factor_Conversion: item.Factor_Conversion
+                                    });
+                                }
+                            });
+                            
+                            setItemsRequerimiento(itemsPlantilla);
+                            toast.success(`Plantilla "${plantilla.Plantilla_Nombre}" cargada con ${itemsPlantilla.length} items`, 
+                                { id: 'loading-plantilla' });
+                        } else {
+                            toast.success(`Plantilla "${plantilla.Plantilla_Nombre}" cargada`, 
+                                { id: 'loading-plantilla' });
+                        }
+                    }
+                } catch (plantillaError) {
+                    console.error('❌ Error cargando plantilla:', plantillaError);
+                    toast.error('Error cargando la plantilla', { id: 'loading-plantilla' });
+                }
+            }
+            
         } catch (error) {
             console.error('Error cargando datos:', error);
             toast.error('Error cargando datos iniciales');
@@ -296,7 +408,7 @@ const CrearRequerimiento = () => {
     return (
         <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
             {/* Header del requerimiento */}
-            <HeaderRequerimiento />
+            <HeaderRequerimiento plantillaInfo={plantillaInfo} />
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Formulario de información general */}
